@@ -1,181 +1,227 @@
 -- ============================================
--- ESQUEMA DE BASE DE DATOS PARA SUPABASE
+-- ESQUEMA DE BASE DE DATOS - MESSAGE APP ROMÁNTICA
 -- ============================================
--- 
--- ✅ VERIFICADO: Este script usa tipos de dato correctos para Supabase 2024-2025
--- 
--- Instrucciones:
--- 1. Ve a Supabase Dashboard → SQL Editor
--- 2. Copia y pega este script completo
--- 3. Click en "Run"
--- 4. Verifica en Table Editor que las tablas se crearon correctamente
--- 
--- Documentación:
--- https://supabase.com/docs/guides/database/tables
--- https://supabase.com/docs/guides/auth/row-level-security
+-- Especificación completa con:
+-- - Sistema de emparejamiento (código 6 dígitos + email)
+-- - Typing indicators
+-- - Estados de mensaje (Sent/Delivered/Read)
+-- - Presencia completa (online/last seen/typing)
 -- ============================================
 
 -- ============================================
--- 1. TABLA DE USUARIOS
+-- EXTENSIONES NECESARIAS
 -- ============================================
--- Nota: id UUID REFERENCES auth.users(id) vincula con Supabase Auth
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================
+-- 1. TABLA USUARIOS (Extendida)
+-- ============================================
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT UNIQUE NOT NULL,
     display_name TEXT NOT NULL DEFAULT 'Usuario',
-    email TEXT,
-    phone TEXT,
-    photo_url TEXT,
+    photo_url TEXT,              -- URL de Supabase Storage
     bio TEXT DEFAULT '',
+    
+    -- Sistema de emparejamiento
+    pairing_code VARCHAR(6) UNIQUE,  -- Código de 6 dígitos para invitar
+    partner_id UUID REFERENCES users(id), -- ID de la pareja vinculada
+    is_paired BOOLEAN DEFAULT FALSE,
+    
+    -- Presencia
     is_online BOOLEAN DEFAULT FALSE,
     last_seen BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
-    onesignal_player_id TEXT, -- Para notificaciones push (OneSignal)
+    is_typing BOOLEAN DEFAULT FALSE,
+    typing_in_chat UUID,         -- En qué chat está escribiendo
+    
+    -- Notificaciones
+    onesignal_player_id TEXT,
+    
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
     updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
 );
 
--- Índice para búsquedas por email
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-
--- Índice para estado online
-CREATE INDEX IF NOT EXISTS idx_users_online ON users(is_online);
-
--- Índice para OneSignal Player ID
-CREATE INDEX IF NOT EXISTS idx_users_onesignal ON users(onesignal_player_id) WHERE onesignal_player_id IS NOT NULL;
+-- Índices optimizados
+CREATE INDEX idx_users_pairing_code ON users(pairing_code) WHERE pairing_code IS NOT NULL;
+CREATE INDEX idx_users_partner ON users(partner_id) WHERE partner_id IS NOT NULL;
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_online ON users(is_online);
 
 -- ============================================
--- 2. TABLA DE CHATS
+-- 2. TABLA CHATS (Solo 1 chat por pareja)
 -- ============================================
--- member_ids usa UUID[] (array de UUIDs) en lugar de TEXT[]
 CREATE TABLE IF NOT EXISTS chats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    type TEXT NOT NULL DEFAULT 'direct', -- 'direct' o 'group'
-    name TEXT, -- Solo para grupos
-    photo_url TEXT,
-    owner_id UUID REFERENCES users(id) ON DELETE SET NULL, -- Solo para grupos
-    member_ids UUID[] NOT NULL DEFAULT '{}', -- Array de UUIDs de miembros
-    last_message_enc TEXT, -- Último mensaje cifrado
-    last_message_at BIGINT,
+    type TEXT NOT NULL DEFAULT 'couple', -- 'couple' siempre para esta app
+    member_ids UUID[] NOT NULL DEFAULT '{}',
+    
+    -- Estados de typing (duplicado para rapidez)
+    user1_typing BOOLEAN DEFAULT FALSE,
+    user2_typing BOOLEAN DEFAULT FALSE,
+    
+    -- Mensaje fijado
     pinned_message_id UUID,
     pinned_snippet TEXT,
+    
+    -- Metadatos
+    last_message_enc TEXT,
+    last_message_at BIGINT,
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
-    updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
+    
+    -- Constraint: Solo 2 miembros permitidos
+    CONSTRAINT chk_two_members CHECK (array_length(member_ids, 1) = 2)
 );
 
--- Índice para buscar chats por miembro (usa GIN para arrays)
-CREATE INDEX IF NOT EXISTS idx_chats_members ON chats USING GIN(member_ids);
-
--- Índice para ordenar por último mensaje
-CREATE INDEX IF NOT EXISTS idx_chats_updated ON chats(updated_at DESC);
-
--- Índice para tipo de chat
-CREATE INDEX IF NOT EXISTS idx_chats_type ON chats(type);
+CREATE INDEX idx_chats_members ON chats USING GIN(member_ids);
+CREATE INDEX idx_chats_updated ON chats(updated_at DESC);
+CREATE INDEX idx_chats_typing ON chats(user1_typing, user2_typing);
 
 -- ============================================
--- 3. TABLA DE MENSAJES
+-- 3. TABLA MENSAJES (Con estados completos)
 -- ============================================
 CREATE TABLE IF NOT EXISTS messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     chat_id UUID NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
     sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    type TEXT NOT NULL DEFAULT 'text', -- 'text', 'image', 'video', 'audio', 'deleted'
-    text_enc TEXT, -- Texto cifrado (AES-256-GCM ciphertext)
-    nonce TEXT, -- Nonce para AES-256-GCM (no usado con Android Keystore)
-    auth_tag TEXT, -- Tag de autenticación (no usado con Android Keystore)
-    media_url TEXT, -- URL para multimedia (si aplica)
+    type TEXT NOT NULL DEFAULT 'text', -- 'text', 'image', 'video', 'audio'
+    
+    -- Contenido cifrado
+    text_enc TEXT,               -- Texto cifrado con Android Keystore
+    nonce TEXT,                  -- IV para AES-256-GCM
+    media_url TEXT,              -- URL de Supabase Storage
+    
+    -- Estados de mensaje (WhatsApp style)
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
-    delivered_at BIGINT, -- Cuando se entregó
-    read_at BIGINT, -- Cuando se leyó
+    delivered_at BIGINT,         -- Cuando llegó al dispositivo
+    read_at BIGINT,              -- Cuando abrió el chat
+    
+    -- Soft delete
     deleted_for_all BOOLEAN DEFAULT FALSE,
-    deleted_for UUID[] DEFAULT '{}' -- Array de UUIDs que borraron el mensaje
+    deleted_for UUID[] DEFAULT '{}',
+    
+    -- Constraint: Verificar tipo de mensaje
+    CONSTRAINT chk_message_type CHECK (type IN ('text', 'image', 'video', 'audio', 'deleted'))
 );
 
--- Índice para buscar mensajes por chat
-CREATE INDEX IF NOT EXISTS idx_messages_chat ON messages(chat_id);
-
--- Índice para ordenar por fecha (DESC para mostrar más recientes primero)
-CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at DESC);
-
--- Índice para buscar por remitente
-CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
-
--- Índice para mensajes no leídos
-CREATE INDEX IF NOT EXISTS idx_messages_unread ON messages(read_at) WHERE read_at IS NULL;
-
--- Índice para mensajes por chat y fecha (compuesto para mejor rendimiento)
-CREATE INDEX IF NOT EXISTS idx_messages_chat_created ON messages(chat_id, created_at DESC);
+-- Índices críticos para performance
+CREATE INDEX idx_messages_chat_created ON messages(chat_id, created_at DESC);
+CREATE INDEX idx_messages_unread ON messages(read_at) WHERE read_at IS NULL;
+CREATE INDEX idx_messages_delivered ON messages(delivered_at) WHERE delivered_at IS NULL;
+CREATE INDEX idx_messages_sender ON messages(sender_id);
 
 -- ============================================
--- 4. TABLA DE CONTACTOS (OPCIONAL)
+-- 4. FUNCIONES AUXILIARES
 -- ============================================
-CREATE TABLE IF NOT EXISTS contacts (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    contact_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    alias TEXT DEFAULT '',
-    created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
-    PRIMARY KEY (user_id, contact_user_id)
-);
 
--- Índice para buscar contactos por usuario
-CREATE INDEX IF NOT EXISTS idx_contacts_user ON contacts(user_id);
+-- Generar código de emparejamiento único de 6 dígitos
+CREATE OR REPLACE FUNCTION generate_pairing_code()
+RETURNS VARCHAR(6) AS $$
+DECLARE
+    code VARCHAR(6);
+    exists_check BOOLEAN;
+BEGIN
+    LOOP
+        -- Generar número aleatorio 6 dígitos (100000-999999)
+        code := LPAD(FLOOR(RANDOM() * 900000 + 100000)::TEXT, 6, '0');
+        
+        -- Verificar si existe
+        SELECT EXISTS(SELECT 1 FROM users WHERE pairing_code = code) INTO exists_check;
+        
+        EXIT WHEN NOT exists_check;
+    END LOOP;
+    
+    RETURN code;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Crear chat entre pareja automáticamente
+CREATE OR REPLACE FUNCTION create_couple_chat()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Si se actualizó partner_id y ahora tiene pareja
+    IF NEW.partner_id IS NOT NULL AND OLD.partner_id IS NULL THEN
+        -- Crear chat con ambos miembros
+        INSERT INTO chats (member_ids, created_at, updated_at)
+        VALUES (ARRAY[NEW.id, NEW.partner_id], 
+                EXTRACT(EPOCH FROM NOW()), 
+                EXTRACT(EPOCH FROM NOW()));
+        
+        -- Actualizar la otra persona también
+        UPDATE users SET 
+            partner_id = NEW.id,
+            is_paired = TRUE,
+            updated_at = EXTRACT(EPOCH FROM NOW())
+        WHERE id = NEW.partner_id AND partner_id IS NULL;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER trigger_create_chat_on_pair
+    AFTER UPDATE OF partner_id ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION create_couple_chat();
+
+-- Actualizar último mensaje del chat automáticamente
+CREATE OR REPLACE FUNCTION update_chat_last_message()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.deleted_for_all = FALSE THEN
+        UPDATE chats SET
+            last_message_enc = NEW.text_enc,
+            last_message_at = NEW.created_at,
+            updated_at = EXTRACT(EPOCH FROM NOW())
+        WHERE id = NEW.chat_id;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_chat_on_message
+    AFTER INSERT ON messages
+    FOR EACH ROW
+    EXECUTE FUNCTION update_chat_last_message();
 
 -- ============================================
--- 5. REGLAS DE SEGURIDAD (RLS)
+-- 5. POLÍTICAS DE SEGURIDAD (RLS)
 -- ============================================
--- Habilitar Row Level Security
+
+-- Users: Solo ver/editar propio perfil y datos de pareja
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE chats ENABLE ROW LEVEL SECURITY;
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
 
--- ============================================
--- POLÍTICAS PARA USERS
--- ============================================
-
--- Los usuarios pueden ver su propio perfil
-CREATE POLICY "Users can view own profile"
+CREATE POLICY "Users can view own and partner data"
     ON users FOR SELECT
-    USING (auth.uid() = id);
+    USING (auth.uid() = id OR auth.uid() = partner_id);
 
--- Los usuarios pueden actualizar su propio perfil
 CREATE POLICY "Users can update own profile"
     ON users FOR UPDATE
     USING (auth.uid() = id);
 
--- Los usuarios pueden insertar su propio perfil (al registrarse)
 CREATE POLICY "Users can insert own profile"
     ON users FOR INSERT
     WITH CHECK (auth.uid() = id);
 
--- ============================================
--- POLÍTICAS PARA CHATS
--- ============================================
+-- Chats: Solo miembros pueden ver
+ALTER TABLE chats ENABLE ROW LEVEL SECURITY;
 
--- Los usuarios pueden ver chats donde son miembros
-CREATE POLICY "Users can view member chats"
+CREATE POLICY "Couple members can view chat"
     ON chats FOR SELECT
     USING (auth.uid() = ANY(member_ids));
 
--- Los usuarios pueden crear chats
-CREATE POLICY "Users can create chats"
+CREATE POLICY "Couple members can create chat"
     ON chats FOR INSERT
     WITH CHECK (auth.uid() = ANY(member_ids));
 
--- Los usuarios pueden actualizar chats donde son miembros
-CREATE POLICY "Users can update member chats"
+CREATE POLICY "Couple members can update typing"
     ON chats FOR UPDATE
     USING (auth.uid() = ANY(member_ids));
 
--- Los usuarios pueden eliminar chats donde son miembros
-CREATE POLICY "Users can delete member chats"
-    ON chats FOR DELETE
-    USING (auth.uid() = ANY(member_ids));
+-- Messages: Solo miembros del chat
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
--- ============================================
--- POLÍTICAS PARA MENSAJES
--- ============================================
-
--- Los usuarios pueden ver mensajes de sus chats
-CREATE POLICY "Users can view chat messages"
+CREATE POLICY "Members can view messages"
     ON messages FOR SELECT
     USING (
         EXISTS (
@@ -185,8 +231,7 @@ CREATE POLICY "Users can view chat messages"
         )
     );
 
--- Los usuarios pueden enviar mensajes a sus chats
-CREATE POLICY "Users can send messages"
+CREATE POLICY "Members can insert messages"
     ON messages FOR INSERT
     WITH CHECK (
         auth.uid() = sender_id AND
@@ -197,134 +242,89 @@ CREATE POLICY "Users can send messages"
         )
     );
 
--- Los usuarios pueden actualizar sus propios mensajes
-CREATE POLICY "Users can update own messages"
+CREATE POLICY "Sender can update own messages"
     ON messages FOR UPDATE
     USING (auth.uid() = sender_id);
 
--- Los usuarios pueden eliminar sus propios mensajes
-CREATE POLICY "Users can delete own messages"
-    ON messages FOR DELETE
-    USING (auth.uid() = sender_id);
+CREATE POLICY "Receiver can update delivery status"
+    ON messages FOR UPDATE
+    USING (
+        auth.uid() != sender_id AND
+        EXISTS (
+            SELECT 1 FROM chats 
+            WHERE chats.id = messages.chat_id 
+            AND auth.uid() = ANY(chats.member_ids)
+        )
+    );
 
 -- ============================================
--- POLÍTICAS PARA CONTACTOS
+-- 6. REALTIME CONFIG (Para typing indicators y mensajes)
 -- ============================================
 
--- Los usuarios pueden ver sus propios contactos
-CREATE POLICY "Users can view own contacts"
-    ON contacts FOR SELECT
-    USING (auth.uid() = user_id);
-
--- Los usuarios pueden agregar contactos
-CREATE POLICY "Users can insert contacts"
-    ON contacts FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
-
--- Los usuarios pueden eliminar sus contactos
-CREATE POLICY "Users can delete contacts"
-    ON contacts FOR DELETE
-    USING (auth.uid() = user_id);
-
--- ============================================
--- 6. FUNCIONES Y TRIGGERS
--- ============================================
-
--- Función para actualizar updated_at automáticamente
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = EXTRACT(EPOCH FROM NOW());
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger para users
-CREATE TRIGGER update_users_updated_at
-    BEFORE UPDATE ON users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- Trigger para chats
-CREATE TRIGGER update_chats_updated_at
-    BEFORE UPDATE ON chats
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- ============================================
--- 7. FUNCIÓN PARA CREAR CHAT DIRECTO
--- ============================================
--- Esta función crea o verifica un chat directo entre 2 usuarios
-
-CREATE OR REPLACE FUNCTION get_or_create_direct_chat(user1_id UUID, user2_id UUID)
-RETURNS UUID AS $$
-DECLARE
-    chat_id UUID;
-    sorted_member_ids UUID[];
-BEGIN
-    -- Ordenar member_ids para evitar duplicados
-    sorted_member_ids := ARRAY(SELECT unnest(ARRAY[user1_id, user2_id]) ORDER BY 1);
+-- Habilitar realtime en las tablas necesarias
+BEGIN;
+    -- Crear publicación si no existe
+    CREATE PUBLICATION IF NOT EXISTS supabase_realtime;
     
-    -- Buscar chat existente
-    SELECT id INTO chat_id
-    FROM chats
-    WHERE type = 'direct'
-      AND member_ids = sorted_member_ids
-    LIMIT 1;
-    
-    -- Si no existe, crear nuevo chat
-    IF chat_id IS NULL THEN
-        INSERT INTO chats (type, member_ids, created_at, updated_at)
-        VALUES ('direct', sorted_member_ids, EXTRACT(EPOCH FROM NOW()), EXTRACT(EPOCH FROM NOW()))
-        RETURNING id INTO chat_id;
-    END IF;
-    
-    RETURN chat_id;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+    -- Añadir tablas a realtime
+    ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+    ALTER PUBLICATION supabase_realtime ADD TABLE chats;
+    ALTER PUBLICATION supabase_realtime ADD TABLE users;
+COMMIT;
 
 -- ============================================
--- 8. VISTAS ÚTILES (OPCIONAL)
+-- 7. DATOS DE EJEMPLO (OPCIONAL - SOLO TESTING)
 -- ============================================
+-- Descomentar solo para testing local
 
--- Vista para mostrar últimos mensajes por chat
-CREATE OR REPLACE VIEW chat_last_messages AS
-SELECT DISTINCT ON (chat_id)
-    chat_id,
-    id AS message_id,
-    sender_id,
-    type,
-    text_enc,
-    created_at
-FROM messages
-ORDER BY chat_id, created_at DESC;
+/*
+-- Crear dos usuarios de prueba
+INSERT INTO users (id, email, display_name, is_paired)
+VALUES 
+    ('00000000-0000-0000-0000-000000000001', 'user1@test.com', 'Usuario 1', FALSE),
+    ('00000000-0000-0000-0000-000000000002', 'user2@test.com', 'Usuario 2', FALSE);
 
--- ============================================
--- 9. COMENTARIOS EN LAS TABLAS (DOCUMENTACIÓN)
--- ============================================
+-- Vincular usuarios
+UPDATE users SET partner_id = '00000000-0000-0000-0000-000000000002' WHERE id = '00000000-0000-0000-0000-000000000001';
+UPDATE users SET partner_id = '00000000-0000-0000-0000-000000000001' WHERE id = '00000000-0000-0000-0000-000000000002';
+UPDATE users SET is_paired = TRUE WHERE id IN ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002');
 
-COMMENT ON TABLE users IS 'Perfiles de usuario vinculados con Supabase Auth';
-COMMENT ON TABLE chats IS 'Conversaciones entre usuarios (directas o grupos)';
-COMMENT ON TABLE messages IS 'Mensajes cifrados dentro de chats';
-COMMENT ON TABLE contacts IS 'Lista de contactos de cada usuario';
+-- Crear chat de prueba
+INSERT INTO chats (member_ids, created_at, updated_at)
+VALUES (ARRAY['00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002']);
 
-COMMENT ON COLUMN users.onesignal_player_id IS 'OneSignal Player ID para notificaciones push';
-COMMENT ON COLUMN chats.member_ids IS 'Array de UUIDs de miembros del chat';
-COMMENT ON COLUMN messages.text_enc IS 'Mensaje cifrado con AES-256-GCM (Android Keystore)';
-COMMENT ON COLUMN messages.deleted_for IS 'Array de UUIDs de usuarios que eliminaron el mensaje';
+-- Crear mensaje de prueba
+INSERT INTO messages (chat_id, sender_id, type, text_enc, created_at)
+VALUES (
+    (SELECT id FROM chats LIMIT 1),
+    '00000000-0000-0000-0000-000000000001',
+    'text',
+    'SGVsbG8gV29ybGQh', -- Base64 de "Hello World!"
+    EXTRACT(EPOCH FROM NOW())
+);
+*/
 
 -- ============================================
 -- FIN DEL SCRIPT
 -- ============================================
 -- 
--- Verificación:
--- 1. Ve a Table Editor en Supabase
--- 2. Deberías ver las tablas: users, chats, messages, contacts
--- 3. Verifica que las políticas de seguridad están activas
--- 4. Prueba la función: SELECT get_or_create_direct_chat('uuid-1', 'uuid-2');
+-- Instrucciones:
+-- 1. Ve a Supabase Dashboard → SQL Editor
+-- 2. Copia y pega este script completo
+-- 3. Click en "Run"
+-- 4. Verifica en Table Editor que las tablas se crearon correctamente
 -- 
--- Siguientes pasos:
--- 1. Configura SupabaseConfig.kt con tus credenciales
--- 2. Configura OneSignal
--- 3. Prueba la app en Android Studio
+-- Tablas esperadas:
+-- - users (con pairing_code, partner_id, typing)
+-- - chats (con user1_typing, user2_typing)
+-- - messages (con delivered_at, read_at)
+-- 
+-- Funciones esperadas:
+-- - generate_pairing_code()
+-- - create_couple_chat()
+-- - update_chat_last_message()
+-- 
+-- Triggers esperados:
+-- - trigger_create_chat_on_pair
+-- - trigger_update_chat_on_message
 -- ============================================

@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * Modelo de Chat para Supabase
+ * 
+ * Incluye typing indicators para ambos usuarios
  */
 @Serializable
 data class Chat(
@@ -12,35 +14,43 @@ data class Chat(
     val id: String = "",
     
     @SerialName("type")
-    val type: String = "direct", // direct, group
-    
-    @SerialName("name")
-    val name: String? = null, // Solo para grupos
-    
-    @SerialName("photo_url")
-    val photoUrl: String? = null,
-    
-    @SerialName("owner_id")
-    val ownerId: String? = null, // Solo para grupos
+    val type: String = "couple", // 'couple' siempre para esta app
     
     @SerialName("member_ids")
     val memberIds: List<String> = emptyList(),
     
-    @SerialName("last_message_enc")
-    val lastMessageEnc: String? = null, // Último mensaje cifrado
+    // Typing indicators
+    @SerialName("user1_typing")
+    val user1Typing: Boolean = false,
     
-    @SerialName("last_message_at")
-    val lastMessageAt: Long? = null,
+    @SerialName("user2_typing")
+    val user2Typing: Boolean = false,
     
+    // Mensaje fijado
     @SerialName("pinned_message_id")
     val pinnedMessageId: String? = null,
     
     @SerialName("pinned_snippet")
     val pinnedSnippet: String? = null,
     
+    // Metadatos
+    @SerialName("last_message_enc")
+    val lastMessageEnc: String? = null,
+    
+    @SerialName("last_message_at")
+    val lastMessageAt: Long? = null,
+    
     @SerialName("created_at")
     val createdAt: Long = System.currentTimeMillis() / 1000,
     
     @SerialName("updated_at")
     val updatedAt: Long = System.currentTimeMillis() / 1000
-)
+) {
+    /**
+     * Verifica si un usuario específico está escribiendo
+     */
+    fun isUserTyping(userId: String): Boolean {
+        val index = memberIds.indexOf(userId)
+        return if (index == 0) user1Typing else if (index == 1) user2Typing else false
+    }
+}
