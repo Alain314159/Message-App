@@ -4,6 +4,10 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     // Requerido para Supabase (Kotlin Serialization)
     kotlin("plugin.serialization") version "1.9.21"
+    
+    // Plugins de calidad de código
+    id("io.gitlab.arturbosch.detekt") version "1.23.5"
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
 }
 
 android {
