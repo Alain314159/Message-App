@@ -5,9 +5,9 @@ plugins {
     // Requerido para Supabase (Kotlin Serialization)
     kotlin("plugin.serialization") version "1.9.21"
     
-    // Plugins de calidad de código
-    id("io.gitlab.arturbosch.detekt") version "1.23.5"
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    // Plugins de calidad de código (Versiones Marzo 2026)
+    id("io.gitlab.arturbosch.detekt") version "1.23.8"
+    id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
 }
 
 android {
@@ -31,18 +31,63 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            isMinifyEnabled = false
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
+        }
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21  // Actualizado a Java 21
+        targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions { jvmTarget = "17" }
+    kotlinOptions { 
+        jvmTarget = "21"  // Actualizado a Java 21
+        freeCompilerArgs += listOf(
+            "-opt-in=kotlin.RequiresOptIn",
+            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
+        )
+    }
     
-    // Habilitar buildConfig para variables de entorno (opcional)
-    // buildFeatures {
-    //     buildConfig = true
-    // }
+    // Habilitar buildConfig para variables de entorno
+    buildFeatures {
+        buildConfig = true
+        compose = true
+    }
+    
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.8"
+    }
+    
+    // Lint configuration
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+        baseline = file("lint-baseline.xml")
+        xmlReport = true
+        htmlReport = true
+    }
+    
+    // Test options
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
+    
+    // Packaging options
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE"
+            excludes += "META-INF/LICENSE.txt"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.txt"
+        }
+    }
 }
 
 dependencies {
@@ -60,6 +105,9 @@ dependencies {
     
     // Testing
     testImplementation(libs.junit)
+    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -70,21 +118,22 @@ dependencies {
     // ============================================
     // NAVIGATION & UI
     // ============================================
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("androidx.compose.material:material-icons-extended:1.6.8")
+    implementation("androidx.navigation:navigation-compose:2.8.8")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("androidx.compose.foundation:foundation")
 
     // ============================================
     // IMAGE LOADING
     // ============================================
-    implementation("io.coil-kt:coil-compose:2.6.0")
-    implementation("io.coil-kt:coil-video:2.6.0")
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("io.coil-kt:coil-video:2.7.0")
 
     // ============================================
     // LIFECYCLE
     // ============================================
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 
     // ============================================
     // EMOJI
@@ -96,7 +145,7 @@ dependencies {
     // SUPABASE (Reemplaza a Firebase)
     // ============================================
     // Documentación: https://github.com/supabase-community/supabase-kt
-    // Versión: 3.4.1 (Marzo 2026 - ÚLTIMA)
+    // Versión: 3.4.1 (Marzo 2026 - ÚLTIMA ESTABLE)
     // Nota: Antes de 3.0.0 se llamaba "gotrue-kt", ahora es "auth-kt"
     // Incluye: Auth, Database, Realtime, Storage (para multimedia)
     
@@ -129,7 +178,7 @@ dependencies {
     // GOOGLE SIGN IN (OAuth)
     // ============================================
     // Para login con Google + Credential Manager
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation("androidx.credentials:credentials:1.5.0-rc01")
     implementation("androidx.credentials:credentials-play-services-auth:1.5.0-rc01")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
@@ -137,6 +186,39 @@ dependencies {
     // ============================================
     // COROUTINES
     // ============================================
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
+}
+
+// ============================================
+// CONFIGURACIÓN DE DETEKT PARA EL MÓDULO APP
+// ============================================
+detekt {
+    config.setFrom(file("${rootProject.projectDir}/config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+    allRules = false
+    parallel = true
+    ignoreFailures = true
+    basePath = rootProject.projectDir.absolutePath
+    
+    reports {
+        html.enabled = true
+        xml.enabled = true
+        txt.enabled = true
+        sarif.enabled = true
+    }
+}
+
+// ============================================
+// CONFIGURACIÓN DE KTLINT
+// ============================================
+ktlint {
+    android = true
+    outputToConsole = true
+    ignoreFailures = true
+    enableExperimentalRules = false
+    filter {
+        exclude("**/generated/**")
+        include("**/kotlin/**")
+    }
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.4.0" type="baseline" client="gradle" dependencies="true" name="AGP 8.4.0" variant="fatal" version="8.4.0">
+
+    <!--
+    Lint Baseline - Línea base de errores Lint
+    Este archivo contiene los errores existentes que se permiten temporalmente
+    Nueva configuración: Marzo 2026
+    
+    Los nuevos errores NO se agregarán automáticamente.
+    Para actualizar: ./gradlew lintDebug -Dlint.baseline.regenerate=true
+    -->
+
+    <!-- Agregar aquí los errores existentes que se quieren suprimir temporalmente -->
+
+</issues>
