@@ -12,9 +12,6 @@ env:
   GRADLE_OPTS: >
     -Dorg.gradle.jvmargs=-Xmx8g
     -Dorg.gradle.daemon=false
-    --no-daemon
-    --stacktrace
-    --info
     -Dkotlin.incremental=false
 
 jobs:
@@ -206,7 +203,7 @@ jobs:
         echo "Java Version: $(java -version 2>&1 | head -1)"
         echo "Gradle Version: $(./gradlew --version | grep Gradle)"
         
-        ./gradlew clean assembleDebug --info --stacktrace --scan 2>&1 | tee build-debug.log
+        ./gradlew assembleDebug --stacktrace --info 2>&1 | tee build-debug.log
         
         echo "=== RESULTADO COMPILACIÓN DEBUG ==="
         if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
