@@ -3,23 +3,29 @@ package com.example.messageapp.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.messageapp.data.ChatRepository
+import com.example.messageapp.data.PresenceRepository
 import com.example.messageapp.model.Chat
 import com.example.messageapp.model.Message
 import com.example.messageapp.crypto.E2ECipher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 
 /**
  * ViewModel de Chat Individual
- * 
+ *
  * ✅ VERIFICADO: Implementación actualizada con E2ECipher usando Android Keystore
- * 
+ *
  * Gestiona los mensajes de un chat específico en tiempo real
  * Incluye cifrado/descifrado E2E con AES-256-GCM
+ * Incluye typing indicators y presencia
  */
 class ChatViewModel(
-    private val repo: ChatRepository = ChatRepository()
+    private val repo: ChatRepository = ChatRepository(),
+    private val presenceRepo: PresenceRepository = PresenceRepository()
 ) : ViewModel() {
     
     private val _chat = MutableStateFlow<Chat?>(null)
@@ -227,5 +233,79 @@ class ChatViewModel(
                 _error.value = "Error al eliminar mensaje: ${e.message}"
             }
         }
+    }
+    
+    // ============================================
+    // TYPING INDICATORS Y PRESENCIA
+    // ============================================
+    
+    private val _isPartnerTyping = MutableStateFlow(false)
+    val isPartnerTyping = _isPartnerTyping.asStateFlow()
+    
+    private val _isPartnerOnline = MutableStateFlow(false)
+    val isPartnerOnline = _isPartnerOnline.asStateFlow()
+    
+    private val _partnerLastSeen = MutableStateFlow<Long?>(null)
+    val partnerLastSeen = _partnerLastSeen.asStateFlow()
+    
+    /**
+     * Empieza a observar typing indicator de la pareja
+     */
+    @OptIn(FlowPreview::class)
+    fun observePartnerTyping(chatId: String, myUid: String) {
+        viewModelScope.launch {
+            presenceRepo.observePartnerTyping(chatId, myUid)
+                .debounce(300) // Evitar cambios muy rápidos
+                .collect { isTyping ->
+                    _isPartnerTyping.value = isTyping
+                }
+        }
+    }
+    
+    /**
+     * Empieza a observar estado online de la pareja
+     */
+    fun observePartnerOnline(partnerId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            presenceRepo.observePartnerOnline(partnerId)
+                .collect { isOnline ->
+                    _isPartnerOnline.value = isOnline
+                }
+        }
+        
+        // Cargar last seen inicial
+        viewModelScope.launch(Dispatchers.IO) {
+            _partnerLastSeen.value = presenceRepo.getPartnerLastSeen(partnerId)
+        }
+    }
+    
+    /**
+     * Actualiza estado de "escribiendo"
+     * Se auto-limpia después de 5 segundos
+     */
+    fun setTyping(chatId: String, isTyping: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            presenceRepo.setTypingStatus(chatId, isTyping)
+        }
+    }
+    
+    /**
+     * Actualiza estado online/offline
+     */
+    fun setOnline(online: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            presenceRepo.updateOnlineStatus(online)
+        }
+    }
+    
+    /**
+     * Limpia recursos cuando se destruye el ViewModel
+     */
+    override fun onCleared() {
+        super.onCleared()
+        // Marcar como offline y dejar de escribir
+        setOnline(false)
+        currentChatId?.let { setTyping(it, false) }
+        presenceRepo.cleanup()
     }
 }
