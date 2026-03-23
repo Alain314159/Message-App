@@ -1,13 +1,14 @@
 [versions]
-agp = "8.12.1"
-kotlin = "2.0.21"
-coreKtx = "1.17.0"
+# Actualizado a Marzo 2026
+agp = "8.14.0"  # Android Gradle Plugin más reciente
+kotlin = "2.1.0"  # Kotlin estable más reciente
+coreKtx = "1.15.0"
 junit = "4.13.2"
-junitVersion = "1.3.0"
-espressoCore = "3.7.0"
-lifecycleRuntimeKtx = "2.9.2"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.1"
-composeBom = "2024.09.00"
+composeBom = "2025.03.00"  #Compose BOM más reciente
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -24,9 +25,17 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version = "2.8.8" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-emoji2 = { group = "androidx.emoji2", name = "emoji2", version = "1.5.0" }
+androidx-emoji2-bundled = { group = "androidx.emoji2", name = "emoji2-bundled", version = "1.5.0" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version = "1.7.8" }
+androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version = "1.7.8" }
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.7.0" }
+coil-video = { group = "io.coil-kt", name = "coil-video", version = "2.7.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-
