@@ -1,149 +1,282 @@
 package com.example.messageapp.data
 
-import android.app.Activity
-import com.google.firebase.FirebaseException
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthOptions
-import com.google.firebase.auth.PhoneAuthProvider
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.messaging.FirebaseMessaging
-import kotlinx.coroutines.CoroutineScope
+import com.example.messageapp.model.User
+import com.example.messageapp.supabase.SupabaseConfig
+import com.example.messageapp.crypto.SecureKeyManager
+import io.github.jan.tennert.supabase.auth.Auth
+import io.github.jan.tennert.supabase.auth.providers.builtin.Email
+import io.github.jan.tennert.supabase.postgrest.Postgrest
+import io.github.jan.tennert.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import java.util.concurrent.TimeUnit
-import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.withContext
+import io.github.jan.tennert.supabase.postgrest.postgrest
 
-class AuthRepository(
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
-) {
-    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    suspend fun signUpEmail(email: String, pass: String) {
-        auth.createUserWithEmailAndPassword(email, pass).await()
-        upsertUserProfile()
-        saveFcmTokenSafe()
+/**
+ * Repositorio de Autenticación usando Supabase Auth
+ * 
+ * Reemplaza a Firebase Auth con Supabase Gotrue
+ * 
+ * Funcionalidades:
+ * - Registro con email/password
+ * - Login con email/password
+ * - Login anónimo (simulado con email temporal)
+ * - Gestión de sesión
+ * - Logout
+ */
+class AuthRepository {
+    
+    private val auth = SupabaseConfig.client.plugin(Auth)
+    private val db = SupabaseConfig.client.plugin(Postgrest)
+    
+    /**
+     * Verifica si hay un usuario logueado
+     */
+    fun isUserLoggedIn(): Boolean {
+        return auth.currentSessionOrNull() != null
     }
-
-    suspend fun signInEmail(email: String, pass: String) {
-        auth.signInWithEmailAndPassword(email, pass).await()
-        upsertUserProfile()
-        saveFcmTokenSafe()
+    
+    /**
+     * Obtiene el UID del usuario actual
+     */
+    fun getCurrentUserId(): String? {
+        return auth.currentSessionOrNull()?.user?.id
     }
-
-    suspend fun sendPasswordReset(email: String) {
-        auth.sendPasswordResetEmail(email).await()
-    }
-
-    suspend fun signInAnonymouslyAndUpsert() {
-        auth.signInAnonymously().await()
-        upsertUserProfile()
-        saveFcmTokenSafe()
-    }
-
-    fun phoneVerifyCallbacks(
-        onCodeSent: (verificationId: String) -> Unit,
-        onInstantSuccess: () -> Unit,
-        onError: (Exception) -> Unit
-    ): PhoneAuthProvider.OnVerificationStateChangedCallbacks =
-        object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-            override fun onVerificationCompleted(cred: PhoneAuthCredential) {
-                auth.signInWithCredential(cred)
-                    .addOnSuccessListener {
-                        ioScope.launch {
-                            upsertUserProfile()
-                            saveFcmTokenSafe()
-                        }
-                        onInstantSuccess()
+    
+    /**
+     * Obtiene los datos completos del usuario actual
+     */
+    suspend fun getCurrentUser(): User? = withContext(Dispatchers.IO) {
+        val uid = getCurrentUserId() ?: return@withContext null
+        
+        try {
+            val response = db
+                .from("users")
+                .select(columns = Columns.list("*")) {
+                    filter {
+                        eq("id", uid)
                     }
-                    .addOnFailureListener { onError(it) }
+                }
+                .decodeSingle<User>()
+            
+            response
+        } catch (e: Exception) {
+            android.util.Log.w("AuthRepository", "Error getting user", e)
+            null
+        }
+    }
+    
+    /**
+     * Registro con email y password
+     */
+    suspend fun signUpWithEmail(email: String, password: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            // Crear usuario con Supabase Auth
+            val authResult = auth.signUpWith(Email) {
+                this.email = email
+                this.password = password
             }
-
-            override fun onVerificationFailed(e: FirebaseException) {
-                onError(e)
+            
+            val uid = authResult.user.id
+            
+            // Crear perfil en la tabla users
+            createUserProfile(uid, email)
+            
+            // Generar clave maestra para cifrado E2E
+            SecureKeyManager.getOrCreateMasterKey()
+            
+            Result.success(uid)
+        } catch (e: Exception) {
+            android.util.Log.w("AuthRepository", "Sign up error", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Login con email y password
+     */
+    suspend fun signInWithEmail(email: String, password: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            // Login con Supabase Auth
+            auth.signInWith(Email) {
+                this.email = email
+                this.password = password
             }
-
-            override fun onCodeSent(
-                verificationId: String,
-                token: PhoneAuthProvider.ForceResendingToken
+            
+            val uid = auth.currentSessionOrNull()?.user?.id
+                ?: throw IllegalStateException("User ID not found after login")
+            
+            // Verificar/actualizar perfil
+            upsertUserProfile(uid)
+            
+            Result.success(uid)
+        } catch (e: Exception) {
+            android.util.Log.w("AuthRepository", "Sign in error", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Login anónimo (simulado con email temporal)
+     * Supabase no soporta login anónimo nativo, así que creamos
+     * un usuario con email temporal
+     */
+    suspend fun signInAnonymously(): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            // Generar email temporal único
+            val tempEmail = "anon_${System.currentTimeMillis()}@messageapp.local"
+            val tempPassword = java.util.UUID.randomUUID().toString()
+            
+            // Crear usuario anónimo
+            val authResult = auth.signUpWith(Email) {
+                this.email = tempEmail
+                this.password = tempPassword
+            }
+            
+            val uid = authResult.user.id
+            
+            // Crear perfil anónimo
+            db.from("users").insert(
+                mapOf(
+                    "id" to uid,
+                    "display_name" to "Usuario Anónimo",
+                    "email" to tempEmail,
+                    "bio" to "",
+                    "is_online" to true,
+                    "created_at" to (System.currentTimeMillis() / 1000),
+                    "updated_at" to (System.currentTimeMillis() / 1000)
+                )
+            )
+            
+            // Generar clave maestra
+            SecureKeyManager.getOrCreateMasterKey()
+            
+            Result.success(uid)
+        } catch (e: Exception) {
+            android.util.Log.w("AuthRepository", "Anonymous sign in error", e)
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Crea el perfil inicial del usuario
+     */
+    private suspend fun createUserProfile(uid: String, email: String) = withContext(Dispatchers.IO) {
+        try {
+            db.from("users").insert(
+                mapOf(
+                    "id" to uid,
+                    "display_name" to "Usuario",
+                    "email" to email,
+                    "bio" to "",
+                    "is_online" to true,
+                    "created_at" to (System.currentTimeMillis() / 1000),
+                    "updated_at" to (System.currentTimeMillis() / 1000)
+                )
+            )
+        } catch (e: Exception) {
+            android.util.Log.w("AuthRepository", "Create profile error", e)
+        }
+    }
+    
+    /**
+     * Actualiza o crea el perfil del usuario (idempotente)
+     */
+    suspend fun upsertUserProfile(uid: String) = withContext(Dispatchers.IO) {
+        try {
+            // Verificar si existe
+            val existing = db.from("users")
+                .select(columns = Columns.list("id")) {
+                    filter { eq("id", uid) }
+                }
+                .decodeSingle<User>()
+            
+            if (existing != null) {
+                // Actualizar last_seen
+                db.from("users").update(
+                    mapOf(
+                        "is_online" to true,
+                        "last_seen" to (System.currentTimeMillis() / 1000),
+                        "updated_at" to (System.currentTimeMillis() / 1000)
+                    )
+                ) {
+                    filter { eq("id", uid) }
+                }
+            }
+        } catch (e: Exception) {
+            // Si no existe, crear
+            createUserProfile(uid, auth.currentSessionOrNull()?.user?.email ?: "")
+        }
+    }
+    
+    /**
+     * Actualiza el estado de presencia del usuario
+     */
+    suspend fun updatePresence(online: Boolean) = withContext(Dispatchers.IO) {
+        val uid = getCurrentUserId() ?: return@withContext
+        
+        try {
+            db.from("users").update(
+                mapOf(
+                    "is_online" to online,
+                    "last_seen" to (System.currentTimeMillis() / 1000),
+                    "updated_at" to (System.currentTimeMillis() / 1000)
+                )
             ) {
-                onCodeSent(verificationId)
+                filter { eq("id", uid) }
             }
-        }
-
-    fun startPhoneVerification(
-        activity: Activity,
-        phone: String,
-        callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
-    ) {
-        val opts = PhoneAuthOptions.newBuilder(auth)
-            .setPhoneNumber(phone)
-            .setTimeout(60L, TimeUnit.SECONDS)
-            .setActivity(activity)
-            .setCallbacks(callbacks)
-            .build()
-        PhoneAuthProvider.verifyPhoneNumber(opts)
-    }
-
-    suspend fun signInWithPhoneCredential(verificationId: String, code: String) {
-        val cred = PhoneAuthProvider.getCredential(verificationId, code)
-        auth.signInWithCredential(cred).await()
-        upsertUserProfile()
-        saveFcmTokenSafe()
-    }
-
-    suspend fun upsertUserProfile() {
-        val u = auth.currentUser ?: return
-        val doc = db.collection("users").document(u.uid)
-
-        val data = mapOf(
-            "displayName" to (u.displayName ?: u.email ?: u.phoneNumber ?: "User"),
-            "photoUrl"     to (u.photoUrl?.toString()),
-            "email"        to (u.email ?: ""),
-            "phone"        to (u.phoneNumber ?: ""),
-            "bio"          to "",
-            "isOnline"     to true,
-            "lastSeen"     to FieldValue.serverTimestamp()
-        )
-
-        doc.set(data, SetOptions.merge()).await()
-    }
-
-    suspend fun saveFcmTokenSafe() {
-        val uid = auth.currentUser?.uid ?: return
-        runCatching {
-            val token = FirebaseMessaging.getInstance().token.await()
-            db.collection("users").document(uid)
-                .update("fcmTokens", FieldValue.arrayUnion(token)).await()
+        } catch (e: Exception) {
+            android.util.Log.w("AuthRepository", "Update presence error", e)
         }
     }
-
-    @Deprecated("Use saveFcmTokenSafe() ou saveFcmTokenInBackground()")
-    suspend fun saveFcmToken() = saveFcmTokenSafe()
-
-    fun saveFcmTokenInBackground() {
-        ioScope.launch { saveFcmTokenSafe() }
-    }
-
-    suspend fun updatePresence(online: Boolean) {
-        val uid = auth.currentUser?.uid ?: return
-        db.collection("users").document(uid)
-            .update("isOnline", online, "lastSeen", FieldValue.serverTimestamp()).await()
-    }
-
-    suspend fun signOutAndRemoveToken() {
-        val uid = auth.currentUser?.uid
-        runCatching {
-            val token = FirebaseMessaging.getInstance().token.await()
-            if (uid != null) {
-                db.collection("users").document(uid)
-                    .update("fcmTokens", FieldValue.arrayRemove(token)).await()
+    
+    /**
+     * Actualiza el OneSignal Player ID para notificaciones push
+     */
+    suspend fun updateOneSignalPlayerId(playerId: String) = withContext(Dispatchers.IO) {
+        val uid = getCurrentUserId() ?: return@withContext
+        
+        try {
+            db.from("users").update(
+                mapOf(
+                    "onesignal_player_id" to playerId,
+                    "updated_at" to (System.currentTimeMillis() / 1000)
+                )
+            ) {
+                filter { eq("id", uid) }
             }
+        } catch (e: Exception) {
+            android.util.Log.w("AuthRepository", "Update OneSignal ID error", e)
         }
-        auth.signOut()
+    }
+    
+    /**
+     * Logout - Cierra sesión y limpia claves
+     */
+    suspend fun signOut() = withContext(Dispatchers.IO) {
+        try {
+            // Actualizar presencia antes de salir
+            updatePresence(false)
+            
+            // Eliminar clave maestra
+            SecureKeyManager.deleteMasterKey()
+            
+            // Cerrar sesión con Supabase
+            auth.signOut()
+        } catch (e: Exception) {
+            android.util.Log.w("AuthRepository", "Sign out error", e)
+        }
+    }
+    
+    /**
+     * Envía email de recuperación de password
+     */
+    suspend fun sendPasswordReset(email: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            auth.resetPasswordForEmail(email)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            android.util.Log.w("AuthRepository", "Password reset error", e)
+            Result.failure(e)
+        }
     }
 }

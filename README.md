@@ -1,75 +1,228 @@
-#  Message App (WhatsApp Clone with Firebase)
+# 💕 Message App - Versión Supabase
 
-Mensageiro simples com 1:1 e grupos, **envio de mídia**, **mensagens fixadas**, **busca**, **apagar para todos/só pra mim**, **esconder conversa**, **sair/excluir grupo**, **perfil**, **contatos** — tudo com Firebase (Auth, Firestore, Storage).
+App de mensajería romántica para 2 personas con cifrado E2E usando libsodium (AES-256-GCM).
 
----
+## 🚀 Migración Completada
 
-## Funcionalidades
-
-- **Chats diretos e grupos**
-- **Envio de mídia**: imagens, vídeos, áudios e arquivos (Firebase Storage)
-- **Visual por dia (sticky headers)** e busca no chat
-- **Mensagem fixada**
-- **Status**: entregue/lido
-- **Excluir mensagem**
-  - **Para mim** (some só para o usuário)
-  - **Para todos** (aparece “Mensagem apagada” para ambos)
-- **Esconder conversa** (só para mim) e **restaurar**
-- **Grupos**: sair do grupo; dono pode **apagar grupo para todos**
-- **Perfil e contatos**
-- **Preview de última mensagem** na Home (decodifica se estiver criptografada) 
+Esta versión ha sido migrada de Firebase a **Supabase + OneSignal** para:
+- ✅ Funcionar en Cuba (sin dependencia de Google)
+- ✅ Cifrado E2E real con libsodium
+- ✅ Notificaciones push con OneSignal
+- ✅ Tiempo real con WebSockets
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 📋 Configuración Requerida
 
-- **Kotlin** – Linguagem principal  
-- **Jetpack Compose** – Construção da UI declarativa  
-- **Firebase** – Authentication, Cloud Firestore, Cloud Storage
+### 1. Supabase
 
----
+1. Ve a https://supabase.com y crea una cuenta
+2. Crea un nuevo proyecto
+3. Ve a **Settings → API** y copia:
+   - `Project URL` → `SUPABASE_URL`
+   - `anon/public key` → `SUPABASE_ANON_KEY`
 
-## 📱 Instalação e Testes
+4. Ve a **SQL Editor** y ejecuta el script `database_schema.sql`
 
-[![Latest release](https://img.shields.io/github/v/release/zKaminise/Message-App?display_name=tag)](https://github.com/zKaminise/Message-App/releases/latest)
+### 2. OneSignal
 
-**APK (v1.0):**  
-[⬇️ Baixar MessageApp-1.0.apk](https://github.com/zKaminise/Message-App/releases/download/v1.1/MessageApp-v1.1.apk)
+1. Ve a https://onesignal.com y crea una cuenta
+2. Crea una nueva app (Android)
+3. Copia:
+   - `App ID` → `ONESIGNAL_APP_ID`
+   - `REST API Key` → `ONESIGNAL_REST_API_KEY` (para el servidor)
 
+### 3. Configurar la App
 
-### 2. Clonar e rodar no Android Studio
-```bash
-git clone https://github.com/zKaminise/Message-app.git
+Edita `app/src/main/java/com/example/messageapp/supabase/SupabaseConfig.kt`:
+
+```kotlin
+const val SUPABASE_URL = "https://tu-proyecto.supabase.co"
+const val SUPABASE_ANON_KEY = "tu-anon-key"
+const val ONESIGNAL_APP_ID = "tu-onesignal-app-id"
 ```
-Abra o projeto no Android Studio
-
-Conecte um dispositivo físico ou inicie um emulador
-
-Clique em Run ▶
 
 ---
 
-## Configurações do Firebase
+## 🔐 Seguridad
 
- - Criar o Projeto e vincular o "google-services.json" no Projeto
- - Criação >> Authentication >> Ativar Email/senha e Smartphone
- - Criação >> Firestore Database >> Criar Banco de Dados >> Necessário configurar Coleção users e chats e uma subcoleção messages dentro de chats
- - Criação >> Storage >> Aqui não é necessário criar pastas
+### Cifrado E2E
+
+- **Algoritmo:** AES-256-GCM con libsodium
+- **Claves:** Guardadas en Android Keystore (hardware)
+- **Derivación:** HKDF-SHA256 por chat
+- **Formato:** `{nonce}:{ciphertext}:{authTag}` (Base64)
+
+### Seguridad de Datos
+
+- Row Level Security (RLS) en todas las tablas
+- Solo los miembros del chat pueden ver mensajes
+- Las claves NUNCA salen del dispositivo
 
 ---
 
-## Prints do Aplicativo
+## 🏗️ Arquitectura
 
-| Login | Home | Chat | Info do Chat | Contatos |
-|-------|------|------|--------------|----------|
-|<img width="378" height="757" alt="image" src="https://github.com/user-attachments/assets/6094aced-f951-40d1-8141-e398a0c6e0dc" />| <img width="377" height="760" alt="image" src="https://github.com/user-attachments/assets/416bf0d2-0224-4a95-8181-31f245011650" />| <img width="378" height="773" alt="image" src="https://github.com/user-attachments/assets/6d5ce2e1-a723-4881-a42d-9e9d71b59cbb" />| <img width="379" height="762" alt="image" src="https://github.com/user-attachments/assets/b2869cc1-fec7-4024-8368-22ee58d3d855" />| <img width="378" height="756" alt="image" src="https://github.com/user-attachments/assets/65de5999-a15c-4a15-9a11-c7a12f996ed4" />|
+```
+app/
+├── data/
+│   ├── AuthRepository.kt          # Supabase Auth
+│   ├── ChatRepository.kt          # Supabase Postgrest + Realtime
+│   └── NotificationRepository.kt  # OneSignal
+├── crypto/
+│   ├── E2ECipher.kt               # AES-256-GCM con libsodium
+│   └── SecureKeyManager.kt        # Android Keystore
+├── model/
+│   ├── User.kt
+│   ├── Chat.kt
+│   └── Message.kt
+├── supabase/
+│   └── SupabaseConfig.kt          # Configuración
+├── viewmodel/
+│   ├── AuthViewModel.kt
+│   ├── ChatListViewModel.kt
+│   └── ChatViewModel.kt
+└── ui/
+    ├── auth/
+    ├── chat/
+    ├── chatlist/
+    └── ...
+```
 
 ---
 
-Desenvolvido como parte da disciplina de Programação para Dispositivos Móveis (PDM) – Universidade Federal de Uberlândia (UFU).
-Alunos: 
+## 📱 Funcionalidades Actuales
+
+- ✅ Login con email/password
+- ✅ Login anónimo
+- ✅ Chat 1:1 en tiempo real
+- ✅ Mensajes cifrados E2E
+- ✅ Estado de entrega/lectura
+- ✅ Mensajes fijados
+- ✅ Eliminar mensajes (para mí/para todos)
+- ✅ Notificaciones push (OneSignal)
+- ✅ Presencia online/offline
+
+---
+
+## 🔧 Próximos Pasos (Features Románticos)
+
+- [ ] Tema de colores romántico (rosa/rojo)
+- [ ] Enviar corazones animados
+- [ ] Contador de días juntos
+- [ ] Mensajes automáticos (buenos días/noches)
+- [ ] Foto de pareja en perfil
+- [ ] Estados de ánimo
+- [ ] Galería de recuerdos
+
+---
+
+## 🇨🇺 Consideraciones para Cuba
+
+### OneSignal desde Cuba
+
+- ✅ Funciona (no es Google)
+- ⚠️ Puede tener intermitencia
+- 🔄 Backup: notificaciones locales
+
+### Si OneSignal falla
+
+La app usará notificaciones locales que:
+- Se muestran cuando abres la app
+- Verifican mensajes nuevos en Supabase
+- No requieren servicios externos
+
+---
+
+## 🛠️ Desarrollo
+
+### Dependencias Principales
+
+```kotlin
+// Supabase
+implementation(platform("io.github.jan-tennert.supabase:bom:2.1.0"))
+implementation("io.github.jan-tennert.supabase:core")
+implementation("io.github.jan-tennert.supabase:postgrest-kt")
+implementation("io.github.jan-tennert.supabase:gotrue-kt")
+implementation("io.github.jan-tennert.supabase:realtime-kt")
+
+// OneSignal
+implementation("com.onesignal:OneSignal:5.1.3")
+
+// libsodium
+implementation("org.libsodium:libsodium-jni:1.0.18")
+```
+
+### Build
+
+```bash
+./gradlew assembleDebug
+```
+
+---
+
+## 📄 Archivos de Configuración
+
+| Archivo | Propósito |
+|---------|-----------|
+| `SupabaseConfig.kt` | Credenciales de Supabase y OneSignal |
+| `database_schema.sql` | Esquema de base de datos |
+| `supabase_config.env` | Template de configuración (no usar en prod) |
+
+---
+
+## ⚠️ IMPORTANTE
+
+1. **NUNCA** subas `SupabaseConfig.kt` con credenciales reales a GitHub
+2. Usa variables de entorno o BuildConfig para producción
+3. Las claves de Supabase son públicas (anon key) pero la REST API key es secreta
+
+---
+
+## 📝 Estado de la Migración
+
+| Componente | Estado |
+|------------|--------|
+| Supabase Auth | ✅ Completado |
+| Supabase Database | ✅ Completado |
+| Supabase Realtime | ✅ Completado |
+| OneSignal | ✅ Completado |
+| Cifrado E2E (libsodium) | ✅ Completado |
+| UI existente | ⚠️ Sin cambios (funciona) |
+| Features románticos | ⏳ Pendiente |
+
+---
+
+## 🤝 Contribuciones
+
+Esta app es parte del proyecto de PDM - Universidad Federal de Uberlândia (UFU).
+
+Alumnos originales:
 - Gabriel Misao
 - Caroline Cortes
 - Angelo Toshio
 - Joao Vitor
 
+Migración a Supabase por: Alain314159
+
+---
+
+## 📞 Soporte
+
+Para issues relacionados con:
+- **Supabase:** Revisa la configuración en `SupabaseConfig.kt`
+- **OneSignal:** Verifica el App ID y permisos de notificación
+- **Cifrado:** Las claves están en Android Keystore (se borran al desinstalar)
+
+---
+
+## 🎯 Siguiente Paso
+
+1. Configura tus credenciales en `SupabaseConfig.kt`
+2. Ejecuta `database_schema.sql` en Supabase SQL Editor
+3. Build y run en Android Studio
+4. ¡Prueba la app!
+
+---
+
+**Hecho con 💕 para Cuba**

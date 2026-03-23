@@ -13,6 +13,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -21,6 +23,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.messageapp.data.AuthRepository
+import com.example.messageapp.data.NotificationRepository
 import com.example.messageapp.ui.auth.AuthScreen
 import com.example.messageapp.ui.chat.ChatScreen
 import com.example.messageapp.ui.chatlist.ChatListScreen
@@ -28,19 +31,21 @@ import com.example.messageapp.ui.contacts.ContactsScreen
 import com.example.messageapp.ui.groups.GroupCreateScreen
 import com.example.messageapp.ui.profile.ProfileScreen
 import com.example.messageapp.viewmodel.AuthViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.example.messageapp.utils.SignatureLogger
+import com.onesignal.OneSignal
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private val authVm = AuthViewModel()
+    private val notificationRepo = NotificationRepository()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Inicializar OneSignal y obtener Player ID
+        initializeOneSignal()
+        
         setContent {
-            LaunchedEffect(Unit) {
-                SignatureLogger.log(this@MainActivity)
-            }
             MaterialTheme {
                 val nav = rememberNavController()
                 RequestPostNotificationsOnce()
@@ -49,6 +54,18 @@ class MainActivity : ComponentActivity() {
                 val initialChatId = remember { intent?.getStringExtra("chatId") }
                 var consumedChatId by remember { mutableStateOf(false) }
 
+                // Actualizar estado de autenticación
+                LaunchedEffect(Unit) {
+                    authVm.init()
+                }
+                
+                // Actualizar presencia cuando cambia el estado de login
+                LaunchedEffect(isLogged) {
+                    if (isLogged) {
+                        authVm.updatePresence(true)
+                    }
+                }
+
                 NavHost(
                     navController = nav,
                     startDestination = if (isLogged) "home" else "auth"
@@ -56,6 +73,8 @@ class MainActivity : ComponentActivity() {
                     composable("auth") {
                         val repo = remember { AuthRepository() }
                         AuthScreen(repo = repo) {
+                            // Después de login exitoso, actualizar OneSignal
+                            updateOneSignalPlayerId()
                             nav.navigate("home") {
                                 popUpTo("auth") { inclusive = true }
                             }
@@ -67,7 +86,10 @@ class MainActivity : ComponentActivity() {
                             openContacts = { nav.navigate("contacts") },
                             openNewGroup = { nav.navigate("groupNew") },
                             openProfile = { nav.navigate("profile") },
-                            logout = { nav.navigate("auth") { popUpTo(0) } }
+                            logout = { 
+                                authVm.signOut()
+                                nav.navigate("auth") { popUpTo(0) }
+                            }
                         )
                         LaunchedEffect(isLogged, initialChatId, consumedChatId) {
                             if (isLogged && initialChatId != null && !consumedChatId) {
@@ -77,7 +99,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     composable("contacts") {
-                        val uid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+                        val uid = authVm.currentUserId.value.orEmpty()
                         ContactsScreen(
                             myUid = uid,
                             onOpenChat = { id ->
@@ -89,41 +111,51 @@ class MainActivity : ComponentActivity() {
                     composable("groupNew") {
                         GroupCreateScreen(
                             onCreated = { id ->
-                                // Remove "groupNew" do back stack e abre o chat.
                                 nav.navigate("chat/$id") {
-                                    popUpTo("groupNew") { inclusive = true }  // <- remove a tela de criação
-                                    launchSingleTop = true                     // evita abrir o mesmo chat 2x
+                                    popUpTo("groupNew") { inclusive = true }
+                                    launchSingleTop = true
                                 }
                             },
                             onCancel = { nav.popBackStack() },
                             onBack   = { nav.popBackStack() }
                         )
                     }
-
-
                     composable("profile") {
                         ProfileScreen(
                             onLoggedOut = {
+                                authVm.signOut()
                                 nav.navigate("auth") { popUpTo(0) }
                             },
                             onBack = { nav.popBackStack() }
                         )
                     }
-
                     composable(
                         "chat/{chatId}",
                         arguments = listOf(navArgument("chatId") { type = NavType.StringType })
                     ) { backStack ->
                         val chatId = backStack.arguments?.getString("chatId").orEmpty()
                         val vm: com.example.messageapp.viewmodel.ChatViewModel = viewModel()
+                        val myUid = authVm.currentUserId.value.orEmpty()
+                        
+                        LaunchedEffect(chatId, myUid) {
+                            if (myUid.isNotEmpty()) {
+                                vm.start(chatId, myUid)
+                            }
+                        }
+                        
+                        DisposableEffect(Unit) {
+                            onDispose {
+                                vm.stop()
+                            }
+                        }
+                        
                         ChatScreen(
                             chatId = chatId,
                             vm = vm,
                             onBack = { nav.popBackStack() },
-                            onOpenInfo = { id -> nav.navigate("chatInfo/$id") } // ⬅️ NOVO
+                            onOpenInfo = { id -> nav.navigate("chatInfo/$id") }
                         )
                     }
-
                     composable(
                         "chatInfo/{chatId}",
                         arguments = listOf(navArgument("chatId") { type = NavType.StringType })
@@ -138,10 +170,60 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
+    
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        // Marcar como offline cuando la app está en segundo plano
+        authVm.updatePresence(false)
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Marcar como online cuando la app está en primer plano
+        authVm.updatePresence(true)
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // Marcar como offline
+        authVm.updatePresence(false)
+    }
+    
+    /**
+     * Inicializa OneSignal y registra el Player ID
+     */
+    private fun initializeOneSignal() {
+        if (notificationRepo.isOneSignalAvailable()) {
+            notificationRepo.initialize(this)
+            
+            // Obtener Player ID y guardar en Supabase
+            updateOneSignalPlayerId()
+        }
+    }
+    
+    /**
+     * Actualiza el OneSignal Player ID en Supabase
+     */
+    private fun updateOneSignalPlayerId() {
+        if (!notificationRepo.isOneSignalAvailable()) return
+        
+        lifecycleScope.launch {
+            try {
+                val playerId = notificationRepo.getPlayerId()
+                if (playerId != null) {
+                    val authRepo = AuthRepository()
+                    authRepo.updateOneSignalPlayerId(playerId)
+                    android.util.Log.d("MainActivity", "OneSignal Player ID actualizado: $playerId")
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("MainActivity", "Error al actualizar OneSignal ID", e)
+            }
+        }
     }
 }
 
@@ -154,9 +236,23 @@ private fun HomeWrapper(
     logout: () -> Unit
 ) {
     val vm: com.example.messageapp.viewmodel.ChatListViewModel = viewModel()
-    val myUid = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    val authVm: com.example.messageapp.viewmodel.AuthViewModel = viewModel()
+    val myUid by authVm.currentUserId.collectAsStateWithLifecycle()
+    
+    LaunchedEffect(myUid) {
+        if (!myUid.isNullOrBlank()) {
+            vm.start(myUid)
+        }
+    }
+    
+    DisposableEffect(Unit) {
+        onDispose {
+            vm.stop()
+        }
+    }
+    
     ChatListScreen(
-        myUid = myUid,
+        myUid = myUid.orEmpty(),
         vm = vm,
         onOpenChat = openChat,
         onOpenContacts = openContacts,
