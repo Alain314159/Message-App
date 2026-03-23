@@ -92,31 +92,33 @@ dependencies {
     // SUPABASE (Reemplaza a Firebase)
     // ============================================
     // Documentación: https://github.com/supabase-community/supabase-kt
-    // Versión: 2.x (2024-2025)
+    // Versión: 3.4.1 (Marzo 2026 - ÚLTIMA)
+    // Nota: Antes de 3.0.0 se llamaba "gotrue-kt", ahora es "auth-kt"
     
-    implementation(platform("io.github.jan.supabase:bom:2.1.0"))
+    implementation(platform("io.github.jan.supabase:bom:3.4.1"))
     implementation("io.github.jan.supabase:supabase-kt")
-    implementation("io.github.jan.supabase:gotrue-kt")      // Autenticación
+    implementation("io.github.jan.supabase:auth-kt")        // Autenticación (antes gotrue-kt)
     implementation("io.github.jan.supabase:postgrest-kt")   // Base de datos
     implementation("io.github.jan.supabase:realtime-kt")    // WebSockets
     implementation("io.github.jan.supabase:storage-kt")     // Storage (opcional)
     
-    // Ktor client (requerido por Supabase)
-    implementation("io.ktor:ktor-client-android:2.3.7")
-    implementation("io.ktor:ktor-client-core:2.3.7")
-    implementation("io.ktor:ktor-utils:2.3.7")
-    implementation("io.ktor:ktor-client-plugins-http-timeout:2.3.7")
+    // Ktor client (requerido por Supabase 3.x - requiere Ktor 3.x)
+    implementation("io.ktor:ktor-client-android:3.3.0")
+    implementation("io.ktor:ktor-client-core:3.3.0")
+    implementation("io.ktor:ktor-utils:3.3.0")
+    implementation("io.ktor:ktor-client-plugins-http-timeout:3.3.0")
 
     // Kotlinx Serialization (requerido por Supabase)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 
     // ============================================
     // ONE SIGNAL (Notificaciones Push)
     // ============================================
     // Documentación: https://documentation.onesignal.com/docs/en/android-sdk-setup
-    // Versión: 5.6.1+ (2024-2025)
+    // Versión: 5.7.3 (Marzo 2026 - ÚLTIMA, estable)
+    // Nota: 5.7.0 tiene bugs, usar 5.7.2+ o 5.6.2
     
-    implementation("com.onesignal:OneSignal:5.6.1")
+    implementation("com.onesignal:OneSignal:5.7.3")
 
     // ============================================
     // COROUTINES

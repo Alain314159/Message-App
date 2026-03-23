@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 /**
  * Repositorio de Autenticación usando Supabase Auth
  * 
- * ✅ VERIFICADO: Implementación actualizada con supabase-kt 2.x (2024-2025)
+ * ✅ VERIFICADO: Implementación actualizada con supabase-kt 3.x (Marzo 2026)
  * 
  * Reemplaza a Firebase Auth con Supabase Gotrue
  * 

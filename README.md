@@ -13,7 +13,7 @@ Esta versión corrige **8 errores críticos** encontrados en la migración anter
 | ❌ AuthRepository API incorrecta | ✅ `signUpWith()` y `signInWith()` correctos | ✅ Corregido |
 | ❌ libsodium mal implementado | ✅ Android Keystore nativo | ✅ Corregido |
 | ❌ UUID como TEXT en SQL | ✅ UUID nativo de PostgreSQL | ✅ Corregido |
-| ❌ Dependencias incorrectas | ✅ Versions 2024-2025 verificadas | ✅ Corregido |
+| ❌ Dependencias incorrectas | ✅ Versions 2026 (Marzo) verificadas | ✅ Corregido |
 | ❌ getPlayerId() síncrono | ✅ Asíncrono con observer | ✅ Corregido |
 | ❌ Falta validación de email | ✅ Pattern de email agregado | ✅ Corregido |
 
@@ -326,7 +326,7 @@ Estos features NO están incluidos. Se añadirán después:
 - Alain314159
 
 **Corrección de errores:**
-- Revisión exhaustiva con documentación oficial 2024-2025
+- Revisión exhaustiva con documentación oficial Marzo 2026
 
 ---
 

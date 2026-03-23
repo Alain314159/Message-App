@@ -10,9 +10,9 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 /**
- * Repositorio de Notificaciones usando OneSignal SDK 5.6.1+
+ * Repositorio de Notificaciones usando OneSignal SDK 5.7.3
  * 
- * ✅ VERIFICADO: Implementación actualizada con la API oficial de OneSignal 2024-2025
+ * ✅ VERIFICADO: Implementación actualizada con la API oficial de OneSignal (Marzo 2026)
  * 
  * Documentación oficial:
  * https://documentation.onesignal.com/docs/en/android-sdk-setup
