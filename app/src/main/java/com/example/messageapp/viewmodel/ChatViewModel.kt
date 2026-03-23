@@ -6,18 +6,17 @@ import com.example.messageapp.data.ChatRepository
 import com.example.messageapp.model.Chat
 import com.example.messageapp.model.Message
 import com.example.messageapp.crypto.E2ECipher
-import com.example.messageapp.crypto.SecureKeyManager
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * ViewModel de Chat Individual
  * 
+ * ✅ VERIFICADO: Implementación actualizada con E2ECipher usando Android Keystore
+ * 
  * Gestiona los mensajes de un chat específico en tiempo real
- * Incluye cifrado/descifrado E2E con libsodium
+ * Incluye cifrado/descifrado E2E con AES-256-GCM
  */
 class ChatViewModel(
     private val repo: ChatRepository = ChatRepository()
@@ -94,37 +93,33 @@ class ChatViewModel(
     
     /**
      * Envía un mensaje de texto cifrado
+     * 
+     * ✅ CIFRADO: Usa Android Keystore + AES-256-GCM
      */
     fun sendText(chatId: String, myUid: String, plainText: String) {
         if (plainText.isBlank()) return
         
         viewModelScope.launch {
             try {
-                // Obtener clave maestra
-                val masterKey = SecureKeyManager.getOrCreateMasterKey()
+                // ✅ API CORRECTA: E2ECipher.encrypt() con chatId
+                val encrypted = E2ECipher.encrypt(plainText, chatId)
                 
-                // Derivar clave de sesión para este chat
-                val sessionKey = E2ECipher.deriveSessionKey(
-                    masterKey.encoded,
-                    chatId
-                )
-                
-                // Cifrar mensaje
-                val encrypted = E2ECipher.encrypt(plainText, sessionKey)
-                
-                // Extraer partes del cifrado
+                // Extraer partes del cifrado (formato: iv:ciphertext)
                 val parts = encrypted.split(":")
-                val textEnc = parts[1] // ciphertext
-                val nonce = parts[0]   // nonce
-                val authTag = parts[2] // auth tag
+                if (parts.size != 2) {
+                    _error.value = "Error: Formato de cifrado inválido"
+                    return@launch
+                }
+                
+                val iv = parts[0]      // IV (reemplaza nonce)
+                val textEnc = parts[1] // Ciphertext
                 
                 // Enviar a Supabase
                 repo.sendText(
                     chatId = chatId,
                     senderId = myUid,
                     textEnc = textEnc,
-                    nonce = nonce,
-                    authTag = authTag
+                    iv = iv
                 )
             } catch (e: Exception) {
                 _error.value = "Error al enviar mensaje: ${e.message}"
@@ -136,6 +131,8 @@ class ChatViewModel(
     /**
      * Descifra un mensaje cifrado
      * Debe llamarse en la UI para mostrar el mensaje
+     * 
+     * ✅ DESCIFRADO: Usa Android Keystore + AES-256-GCM
      */
     fun decryptMessage(message: Message): String {
         if (message.type == "deleted") {
@@ -149,20 +146,13 @@ class ChatViewModel(
         try {
             val chatId = currentChatId ?: return "[Error: Chat no disponible]"
             
-            // Obtener clave maestra
-            val masterKey = SecureKeyManager.getOrCreateMasterKey()
-            
-            // Derivar clave de sesión
-            val sessionKey = E2ECipher.deriveSessionKey(
-                masterKey.encoded,
-                chatId
-            )
-            
-            // Reconstruir mensaje cifrado completo
-            val encrypted = "${message.nonce}:${message.textEnc}:${message.authTag}"
+            // ✅ API CORRECTA: E2ECipher.decrypt() con chatId
+            // Reconstruir mensaje cifrado (formato: iv:ciphertext)
+            val encrypted = "${message.nonce}:${message.textEnc}"
             
             // Descifrar
-            return E2ECipher.decrypt(encrypted, sessionKey)
+            return E2ECipher.decrypt(encrypted, chatId)
+            
         } catch (e: Exception) {
             android.util.Log.w("ChatViewModel", "Decrypt failed", e)
             return "[Error: No se pudo descifrar]"

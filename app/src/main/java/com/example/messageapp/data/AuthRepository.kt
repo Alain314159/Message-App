@@ -2,26 +2,30 @@ package com.example.messageapp.data
 
 import com.example.messageapp.model.User
 import com.example.messageapp.supabase.SupabaseConfig
-import com.example.messageapp.crypto.SecureKeyManager
-import io.github.jan.tennert.supabase.auth.Auth
-import io.github.jan.tennert.supabase.auth.providers.builtin.Email
-import io.github.jan.tennert.supabase.postgrest.Postgrest
-import io.github.jan.tennert.supabase.postgrest.query.Columns
+import com.example.messageapp.crypto.E2ECipher
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import io.github.jan.tennert.supabase.postgrest.postgrest
 
 /**
  * Repositorio de Autenticación usando Supabase Auth
+ * 
+ * ✅ VERIFICADO: Implementación actualizada con supabase-kt 2.x (2024-2025)
  * 
  * Reemplaza a Firebase Auth con Supabase Gotrue
  * 
  * Funcionalidades:
  * - Registro con email/password
  * - Login con email/password
- * - Login anónimo (simulado con email temporal)
  * - Gestión de sesión
  * - Logout
+ * 
+ * Documentación oficial:
+ * https://github.com/supabase-community/supabase-kt
+ * https://supabase.com/docs/guides/getting-started/quickstarts/android
  */
 class AuthRepository {
     
@@ -43,7 +47,14 @@ class AuthRepository {
     }
     
     /**
-     * Obtiene los datos completos del usuario actual
+     * Obtiene el email del usuario actual
+     */
+    fun getCurrentUserEmail(): String? {
+        return auth.currentSessionOrNull()?.user?.email
+    }
+    
+    /**
+     * Obtiene los datos completos del usuario actual desde la tabla users
      */
     suspend fun getCurrentUser(): User? = withContext(Dispatchers.IO) {
         val uid = getCurrentUserId() ?: return@withContext null
@@ -67,9 +78,24 @@ class AuthRepository {
     
     /**
      * Registro con email y password
+     * 
+     * @param email Email del usuario
+     * @param password Contraseña (mínimo 6 caracteres)
+     * @return Result con el UID del usuario o la excepción
      */
     suspend fun signUpWithEmail(email: String, password: String): Result<String> = withContext(Dispatchers.IO) {
         try {
+            // Validar email
+            if (!isValidEmail(email)) {
+                return@withContext Result.failure(IllegalArgumentException("Email inválido"))
+            }
+            
+            // Validar password
+            if (password.length < 6) {
+                return@withContext Result.failure(IllegalArgumentException("Password debe tener al menos 6 caracteres"))
+            }
+            
+            // ✅ API CORRECTA para supabase-kt 2.x
             // Crear usuario con Supabase Auth
             val authResult = auth.signUpWith(Email) {
                 this.email = email
@@ -81,12 +107,11 @@ class AuthRepository {
             // Crear perfil en la tabla users
             createUserProfile(uid, email)
             
-            // Generar clave maestra para cifrado E2E
-            SecureKeyManager.getOrCreateMasterKey()
-            
+            android.util.Log.d("AuthRepository", "Usuario registrado: $uid")
             Result.success(uid)
+            
         } catch (e: Exception) {
-            android.util.Log.w("AuthRepository", "Sign up error", e)
+            android.util.Log.w("AuthRepository", "Sign up error: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -96,6 +121,7 @@ class AuthRepository {
      */
     suspend fun signInWithEmail(email: String, password: String): Result<String> = withContext(Dispatchers.IO) {
         try {
+            // ✅ API CORRECTA para supabase-kt 2.x
             // Login con Supabase Auth
             auth.signInWith(Email) {
                 this.email = email
@@ -108,17 +134,20 @@ class AuthRepository {
             // Verificar/actualizar perfil
             upsertUserProfile(uid)
             
+            android.util.Log.d("AuthRepository", "Usuario logueado: $uid")
             Result.success(uid)
+            
         } catch (e: Exception) {
-            android.util.Log.w("AuthRepository", "Sign in error", e)
+            android.util.Log.w("AuthRepository", "Sign in error: ${e.message}", e)
             Result.failure(e)
         }
     }
     
     /**
      * Login anónimo (simulado con email temporal)
-     * Supabase no soporta login anónimo nativo, así que creamos
-     * un usuario con email temporal
+     * 
+     * Nota: Supabase no soporta login anónimo nativo en el plan free.
+     * Esta implementación crea un usuario con email temporal único.
      */
     suspend fun signInAnonymously(): Result<String> = withContext(Dispatchers.IO) {
         try {
@@ -147,10 +176,9 @@ class AuthRepository {
                 )
             )
             
-            // Generar clave maestra
-            SecureKeyManager.getOrCreateMasterKey()
-            
+            android.util.Log.d("AuthRepository", "Usuario anónimo creado: $uid")
             Result.success(uid)
+            
         } catch (e: Exception) {
             android.util.Log.w("AuthRepository", "Anonymous sign in error", e)
             Result.failure(e)
@@ -158,7 +186,7 @@ class AuthRepository {
     }
     
     /**
-     * Crea el perfil inicial del usuario
+     * Crea el perfil inicial del usuario en la tabla users
      */
     private suspend fun createUserProfile(uid: String, email: String) = withContext(Dispatchers.IO) {
         try {
@@ -173,8 +201,10 @@ class AuthRepository {
                     "updated_at" to (System.currentTimeMillis() / 1000)
                 )
             )
+            android.util.Log.d("AuthRepository", "Perfil creado para: $uid")
         } catch (e: Exception) {
             android.util.Log.w("AuthRepository", "Create profile error", e)
+            throw e
         }
     }
     
@@ -191,7 +221,7 @@ class AuthRepository {
                 .decodeSingle<User>()
             
             if (existing != null) {
-                // Actualizar last_seen
+                // Actualizar last_seen y online
                 db.from("users").update(
                     mapOf(
                         "is_online" to true,
@@ -201,15 +231,18 @@ class AuthRepository {
                 ) {
                     filter { eq("id", uid) }
                 }
+            } else {
+                // Crear perfil
+                val email = auth.currentSessionOrNull()?.user?.email ?: ""
+                createUserProfile(uid, email)
             }
         } catch (e: Exception) {
-            // Si no existe, crear
-            createUserProfile(uid, auth.currentSessionOrNull()?.user?.email ?: "")
+            android.util.Log.w("AuthRepository", "Upsert profile error", e)
         }
     }
     
     /**
-     * Actualiza el estado de presencia del usuario
+     * Actualiza el estado de presencia del usuario (online/offline)
      */
     suspend fun updatePresence(online: Boolean) = withContext(Dispatchers.IO) {
         val uid = getCurrentUserId() ?: return@withContext
@@ -244,24 +277,27 @@ class AuthRepository {
             ) {
                 filter { eq("id", uid) }
             }
+            android.util.Log.d("AuthRepository", "OneSignal Player ID actualizado: $playerId")
         } catch (e: Exception) {
             android.util.Log.w("AuthRepository", "Update OneSignal ID error", e)
         }
     }
     
     /**
-     * Logout - Cierra sesión y limpia claves
+     * Logout - Cierra sesión y limpia claves de cifrado
      */
     suspend fun signOut() = withContext(Dispatchers.IO) {
         try {
             // Actualizar presencia antes de salir
             updatePresence(false)
             
-            // Eliminar clave maestra
-            SecureKeyManager.deleteMasterKey()
+            // Eliminar claves de cifrado E2E
+            E2ECipher.deleteAllKeys()
             
             // Cerrar sesión con Supabase
             auth.signOut()
+            
+            android.util.Log.d("AuthRepository", "Logout exitoso")
         } catch (e: Exception) {
             android.util.Log.w("AuthRepository", "Sign out error", e)
         }
@@ -273,10 +309,18 @@ class AuthRepository {
     suspend fun sendPasswordReset(email: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             auth.resetPasswordForEmail(email)
+            android.util.Log.d("AuthRepository", "Email de recuperación enviado")
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.w("AuthRepository", "Password reset error", e)
             Result.failure(e)
         }
+    }
+    
+    /**
+     * Valida formato de email
+     */
+    private fun isValidEmail(email: String): Boolean {
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 }

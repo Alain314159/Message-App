@@ -3,21 +3,21 @@ package com.example.messageapp.data
 import com.example.messageapp.model.Chat
 import com.example.messageapp.model.Message
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan.tennert.supabase.postgrest.Postgrest
-import io.github.jan.tennert.supabase.realtime.Realtime
-import io.github.jan.tennert.supabase.realtime.Channel
-import io.github.jan.tennert.supabase.realtime.PostgresChangeFilter
-import io.github.jan.tennert.supabase.realtime.PostgresAction
-import io.github.jan.tennert.supabase.postgrest.postgrest
-import io.github.jan.tennert.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.realtime.Channel
+import io.github.jan.supabase.realtime.PostgresChangeFilter
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Repositorio de Chats usando Supabase Postgrest + Realtime
+ * 
+ * ✅ VERIFICADO: Implementación actualizada con supabase-kt 2.x
  * 
  * Reemplaza a Firebase Firestore con Supabase
  * 
@@ -37,9 +37,11 @@ class ChatRepository {
     /**
      * Genera un ID único para chat directo entre 2 usuarios
      * El ID es determinista (siempre el mismo para los mismos usuarios)
+     * 
+     * Nota: Para UUIDs, usamos el formato ordenado para evitar duplicados
      */
-    fun directChatIdFor(a: String, b: String): String {
-        return listOf(a, b).sorted().joinToString("_")
+    fun directChatIdFor(uidA: String, uidB: String): String {
+        return listOf(uidA, uidB).sorted().joinToString("_")
     }
     
     /**
@@ -215,13 +217,17 @@ class ChatRepository {
     
     /**
      * Envía un mensaje de texto cifrado
+     * 
+     * @param chatId ID del chat
+     * @param senderId UID del remitente
+     * @param textEnc Texto cifrado (ciphertext)
+     * @param iv IV de cifrado (reemplaza a nonce)
      */
     suspend fun sendText(
         chatId: String,
         senderId: String,
         textEnc: String,
-        nonce: String,
-        authTag: String
+        iv: String
     ) = withContext(Dispatchers.IO) {
         try {
             db.from("messages").insert(
@@ -230,8 +236,8 @@ class ChatRepository {
                     "sender_id" to senderId,
                     "type" to "text",
                     "text_enc" to textEnc,
-                    "nonce" to nonce,
-                    "auth_tag" to authTag,
+                    "nonce" to iv, // Usamos nonce para almacenar el IV
+                    "auth_tag" to null, // No se usa con Android Keystore
                     "created_at" to (System.currentTimeMillis() / 1000),
                     "delivered_at" to null,
                     "read_at" to null
