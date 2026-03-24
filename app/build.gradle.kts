@@ -124,22 +124,22 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.video)
 
-    // Supabase 3.4.1 (Marzo 2026)
-    implementation(platform("io.github.jan.supabase:bom:3.4.1"))
+    // Supabase 2.1.0 (versión estable en Maven Central)
+    implementation(platform("io.github.jan.supabase:bom:2.1.0"))
     implementation("io.github.jan.supabase:supabase-kt")
-    implementation("io.github.jan.supabase:auth-kt")
+    implementation("io.github.jan.supabase:gotrue-kt")  // Auth se llama gotrue-kt en v2.x
     implementation("io.github.jan.supabase:postgrest-kt")
     implementation("io.github.jan.supabase:realtime-kt")
     implementation("io.github.jan.supabase:storage-kt")
-    
-    // Ktor 3.3.0 (requerido por Supabase)
-    implementation("io.ktor:ktor-client-android:3.3.0")
-    implementation("io.ktor:ktor-client-core:3.3.0")
-    implementation("io.ktor:ktor-utils:3.3.0")
-    implementation("io.ktor:ktor-client-plugins-http-timeout:3.3.0")
+
+    // Ktor 2.3.7 (requerido por Supabase 2.x)
+    implementation("io.ktor:ktor-client-android:2.3.7")
+    implementation("io.ktor:ktor-client-core:2.3.7")
+    implementation("io.ktor:ktor-utils:2.3.7")
+    implementation("io.ktor:ktor-client-plugins:2.3.7")
 
     // Kotlinx Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 
     // JPush (Aurora Mobile) - GRÁTIS y funciona desde Cuba
     implementation("cn.jiguang.jpush:jpush:4.3.8")
