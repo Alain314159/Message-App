@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     // Requerido para Supabase (Kotlin Serialization)
     kotlin("plugin.serialization") version "2.1.0"
-    
+
     // Plugins de calidad de código (Versiones Marzo 2026)
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
@@ -12,18 +12,18 @@ plugins {
 
 android {
     namespace = "com.example.messageapp"
-    compileSdk = 36
+    compileSdk = 35  // Cambiado a 35 (estable, sin warnings)
 
     defaultConfig {
         applicationId = "com.example.messageapp"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 35  // Cambiado a 35 (estable)
         versionCode = 1
-        versionName = "2.2-jpush" // Nueva versión con JPush
-        
+        versionName = "2.3-jpush" // Versión con JPush y avatares
+
         // JPush AppKey - Reemplaza con tu AppKey de JPush
         manifestPlaceholders["JPUSH_APPKEY"] = "TU_JPUSH_APP_KEY_AQUI"
-        
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -46,23 +46,23 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    kotlinOptions { 
+    kotlinOptions {
         jvmTarget = "21"
         freeCompilerArgs += listOf(
             "-opt-in=kotlin.RequiresOptIn",
             "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
         )
     }
-    
+
     buildFeatures {
         buildConfig = true
         compose = true
     }
-    
+
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+        kotlinCompilerExtensionVersion = "1.5.8"  // Compatible con Kotlin 2.1.0
     }
-    
+
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -70,14 +70,14 @@ android {
         xmlReport = true
         htmlReport = true
     }
-    
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
             isReturnDefaultValues = true
         }
     }
-    
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -107,7 +107,7 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.emoji2)
     implementation(libs.androidx.emoji2.bundled)
-    
+
     // Testing
     testImplementation(libs.junit)
     testImplementation("org.mockito:mockito-core:5.14.2")
@@ -124,26 +124,34 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.video)
 
-    // Supabase 2.1.0 (versión estable en Maven Central)
+    // ============================================
+    // SUPABASE - Versión estable en JitPack (Marzo 2026)
+    // Documentación: https://github.com/supabase-community/supabase-kt
+    // ============================================
     implementation(platform("io.github.jan.supabase:bom:2.1.0"))
-    implementation("io.github.jan.supabase:supabase-kt")
-    implementation("io.github.jan.supabase:gotrue-kt")  // Auth se llama gotrue-kt en v2.x
-    implementation("io.github.jan.supabase:postgrest-kt")
-    implementation("io.github.jan.supabase:realtime-kt")
-    implementation("io.github.jan.supabase:storage-kt")
+    implementation("io.github.jan.supabase:supabase-kt:2.1.0")
+    implementation("io.github.jan.supabase:gotrue-kt:2.1.0")  // Autenticación
+    implementation("io.github.jan.supabase:postgrest-kt:2.1.0")  // Base de datos
+    implementation("io.github.jan.supabase:realtime-kt:2.1.0")  // Tiempo real
+    implementation("io.github.jan.supabase:storage-kt:2.1.0")  // Storage
 
-    // Ktor 2.3.7 (requerido por Supabase 2.x)
-    implementation("io.ktor:ktor-client-android:2.3.7")
-    implementation("io.ktor:ktor-client-core:2.3.7")
-    implementation("io.ktor:ktor-utils:2.3.7")
-    implementation("io.ktor:ktor-client-plugins:2.3.7")
+    // ============================================
+    // KTOR - Versión compatible con Supabase 2.x
+    // ============================================
+    implementation("io.ktor:ktor-client-android:2.3.13")
+    implementation("io.ktor:ktor-client-core:2.3.13")
+    implementation("io.ktor:ktor-utils:2.3.13")
+    implementation("io.ktor:ktor-client-plugins:2.3.13")
 
     // Kotlinx Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
-    // JPush (Aurora Mobile) - GRÁTIS y funciona desde Cuba
-    implementation("cn.jiguang.jpush:jpush:4.3.8")
-    
+    // ============================================
+    // JPUSH (Aurora Mobile) - GRÁTIS y funciona desde Cuba
+    // Repositorio: https://maven.aliyun.com/repository/jcenter
+    // ============================================
+    implementation("cn.jiguang.jpush:jpush:4.3.9")
+
     // Google Sign In
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation("androidx.credentials:credentials:1.5.0-rc01")
