@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.Image
 import com.example.messageapp.model.AvatarType
 import com.example.messageapp.viewmodel.AvatarUiState
 import com.example.messageapp.viewmodel.AvatarViewModel
@@ -193,23 +194,11 @@ private fun AvatarOption(
                     }
                 )
         ) {
-            // Placeholder hasta que tengas las imágenes
-            // Cuando tengas la imagen del koala, descomentar esto:
-            /*
+            // Imagen real del avatar
             Image(
                 painter = painterResource(id = avatarType.drawableResId),
                 contentDescription = avatarType.displayName,
                 modifier = Modifier.fillMaxSize()
-            )
-            */
-            
-            // Placeholder temporal
-            Text(
-                text = when (avatarType) {
-                    AvatarType.CERDITA -> "🐷"
-                    AvatarType.KOALA -> "🐨"
-                },
-                fontSize = 48.sp
             )
         }
 
@@ -259,21 +248,11 @@ private fun AvatarPreview(
                     shape = CircleShape
                 )
         ) {
-            // Placeholder hasta que tengas las imágenes
-            /*
+            // Imagen real del avatar en vista previa
             Image(
                 painter = painterResource(id = avatarType.drawableResId),
                 contentDescription = avatarType.displayName,
                 modifier = Modifier.fillMaxSize()
-            )
-            */
-            
-            Text(
-                text = when (avatarType) {
-                    AvatarType.CERDITA -> "🐷"
-                    AvatarType.KOALA -> "🐨"
-                },
-                fontSize = 80.sp
             )
         }
     }
