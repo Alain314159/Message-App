@@ -55,20 +55,21 @@ CREATE TABLE IF NOT EXISTS chats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     type TEXT NOT NULL DEFAULT 'couple', -- 'couple' siempre para esta app
     member_ids UUID[] NOT NULL DEFAULT '{}',
-    
+
     -- Estados de typing (duplicado para rapidez)
     user1_typing BOOLEAN DEFAULT FALSE,
     user2_typing BOOLEAN DEFAULT FALSE,
-    
+
     -- Mensaje fijado
     pinned_message_id UUID,
     pinned_snippet TEXT,
-    
+
     -- Metadatos
     last_message_enc TEXT,
     last_message_at BIGINT,
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
-    
+    updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
+
     -- Constraint: Solo 2 miembros permitidos
     CONSTRAINT chk_two_members CHECK (array_length(member_ids, 1) = 2)
 );
