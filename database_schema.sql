@@ -35,8 +35,9 @@ CREATE TABLE IF NOT EXISTS users (
     typing_in_chat UUID,         -- En qué chat está escribiendo
     
     -- Notificaciones
-    onesignal_player_id TEXT,
-    
+    onesignal_player_id TEXT,       -- Legacy (usar para JPush también)
+    jpush_registration_id TEXT,     -- JPush Registration ID (nuevo)
+
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
     updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
 );
