@@ -25,12 +25,14 @@ import androidx.navigation.navArgument
 import com.example.messageapp.data.AuthRepository
 import com.example.messageapp.data.NotificationRepository
 import com.example.messageapp.ui.auth.AuthScreen
+import com.example.messageapp.ui.avatar.AvatarPickerScreen
 import com.example.messageapp.ui.chat.ChatScreen
 import com.example.messageapp.ui.chatlist.ChatListScreen
 import com.example.messageapp.ui.contacts.ContactsScreen
 import com.example.messageapp.ui.groups.GroupCreateScreen
 import com.example.messageapp.ui.profile.ProfileScreen
 import com.example.messageapp.viewmodel.AuthViewModel
+import com.example.messageapp.viewmodel.AvatarViewModel
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -125,7 +127,25 @@ class MainActivity : ComponentActivity() {
                                 authVm.signOut()
                                 nav.navigate("auth") { popUpTo(0) }
                             },
-                            onBack = { nav.popBackStack() }
+                            onBack = { nav.popBackStack() },
+                            onOpenAvatarPicker = {
+                                nav.navigate("avatar-picker")
+                            }
+                        )
+                    }
+                    composable("avatar-picker") {
+                        val viewModel: AvatarViewModel = viewModel()
+                        val userId = authVm.currentUserId.value.orEmpty()
+                        
+                        AvatarPickerScreen(
+                            viewModel = viewModel,
+                            userId = userId,
+                            onAvatarSelected = {
+                                nav.popBackStack()
+                            },
+                            onBack = {
+                                nav.popBackStack()
+                            }
                         )
                     }
                     composable(

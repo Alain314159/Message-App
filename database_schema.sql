@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS users (
     onesignal_player_id TEXT,       -- Legacy (usar para JPush también)
     jpush_registration_id TEXT,     -- JPush Registration ID (nuevo)
 
+    -- Avatar
+    avatar_type VARCHAR(20) DEFAULT 'cerdita',  -- Tipo de avatar seleccionado (cerdita, koala)
+
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()),
     updated_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW())
 );
