@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     // Requerido para Supabase (Kotlin Serialization) - versión compatible con Kotlin 2.1.0
     kotlin("plugin.serialization") version "2.1.0"
+    // Requerido para Room Database (KSP - Kotlin Symbol Processing)
+    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
 
     // Plugins de calidad de código (comentados para build rápido - descomentar cuando se necesiten)
     // id("io.gitlab.arturbosch.detekt") version "1.23.8"
@@ -110,9 +112,14 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
-    testImplementation("org.mockito:mockito-core:5.14.2")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
+    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation("io.mockk:mockk-android:1.13.12")
+    testImplementation("com.google.truth:truth:1.4.2")
+    testImplementation("app.cash.turbine:turbine:1.1.0")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.1")
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
+    testImplementation("androidx.room:room-testing:2.6.1")
+    testImplementation("org.robolectric:robolectric:4.12.1")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -164,6 +171,13 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
+
+    // ============================================
+    // ROOM DATABASE - Base de datos local
+    // ============================================
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 }
 
 // Plugins de calidad de código comentados - los plugins no están aplicados
