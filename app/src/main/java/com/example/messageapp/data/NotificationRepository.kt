@@ -1,209 +1,137 @@
 package com.example.messageapp.data
 
 import android.content.Context
+import android.util.Log
+import cn.jiguang.jpush.android.JPushInterface
+import cn.jiguang.jpush.android.api.JPushMessage
+import cn.jiguang.jpush.android.api.TagAliasCallback
 import com.example.messageapp.supabase.SupabaseConfig
-import com.onesignal.OneSignal
-import com.onesignal.debug.LogLevel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import org.json.JSONObject
 
 /**
- * Repositorio de Notificaciones usando OneSignal SDK 5.7.3
+ * Repositorio de Notificaciones usando JPush (Aurora Mobile)
  * 
- * ✅ VERIFICADO: Implementación actualizada con la API oficial de OneSignal (Marzo 2026)
+ * JPush es completamente GRATIS y funciona perfectamente desde Cuba
+ * sin los bloqueos que tienen Firebase y OneSignal
  * 
- * Documentación oficial:
- * https://documentation.onesignal.com/docs/en/android-sdk-setup
- * https://documentation.onesignal.com/docs/en/mobile-sdk-reference
- * 
- * Cambios importantes en OneSignal 5.x:
- * - OneSignal.initialize() reemplaza a initWithContext() + setAppId()
- * - OneSignal.User.pushSubscription.id reemplaza a getDeviceState().userId
- * - API asíncrona para obtener el Player ID
+ * Documentación: https://docs.jiguang.cn/en/
  */
 class NotificationRepository {
     
+    companion object {
+        private const val TAG = "JPushNotification"
+    }
+    
     private var isInitialized = false
     
+    // Eventos de notificaciones recibidas
+    private val _notificationReceived = MutableSharedFlow<JPushNotificationData>()
+    val notificationReceived: SharedFlow<JPushNotificationData> = _notificationReceived.asSharedFlow()
+    
+    // Eventos cuando se abre una notificación
+    private val _notificationOpened = MutableSharedFlow<JPushNotificationData>()
+    val notificationOpened: SharedFlow<JPushNotificationData> = _notificationOpened.asSharedFlow()
+    
     /**
-     * Inicializa OneSignal con el App ID configurado
+     * Inicializa JPush con el App Key configurado
      * Debe llamarse UNA sola vez, preferiblemente en Application.onCreate()
-     * 
-     * @param context Contexto de aplicación
      */
     fun initialize(context: Context) {
-        val appId = SupabaseConfig.ONESIGNAL_APP_ID
+        val appKey = SupabaseConfig.JPUSH_APP_KEY
         
-        // Verificar que el App ID es válido
-        if (appId.isBlank() || appId == "TU_ONESIGNAL_APP_ID_AQUI") {
-            android.util.Log.w("NotificationRepository", 
-                "OneSignal App ID no configurado en SupabaseConfig. " +
+        // Verificar que el App Key es válido
+        if (appKey.isBlank() || appKey == "TU_JPUSH_APP_KEY_AQUI") {
+            Log.w(TAG, "JPush App Key no configurado en SupabaseConfig. " +
                 "Las notificaciones push no funcionarán.")
             return
         }
         
         try {
-            // ✅ API CORRECTA para OneSignal 5.6.1+
-            OneSignal.initialize(context, appId)
+            // Configurar modo debug (solo en desarrollo)
+            JPushInterface.setDebugMode(true)
             
-            // Configurar logging para debugging (solo en debug)
-            OneSignal.Debug.setLogLevel(LogLevel.VERBOSE)
+            // Inicializar JPush
+            JPushInterface.init(context)
             
             isInitialized = true
-            android.util.Log.d("NotificationRepository", "OneSignal inicializado correctamente")
+            Log.d(TAG, "JPush inicializado correctamente")
+            Log.d(TAG, "Registration ID: ${getRegistrationId()}")
             
         } catch (e: Exception) {
-            android.util.Log.e("NotificationRepository", "Error al inicializar OneSignal", e)
+            Log.e(TAG, "Error al inicializar JPush", e)
         }
     }
     
     /**
-     * Obtiene el Player ID único de este dispositivo
+     * Obtiene el Registration ID único de este dispositivo
      * Este ID se usa para enviar notificaciones push a este dispositivo específico
-     * 
-     * Nota: El Player ID solo está disponible DESPUÉS de que OneSignal se registra
-     * con el servidor (puede tomar 1-3 segundos después de initialize())
-     * 
-     * @return Player ID o null si no está disponible
      */
-    suspend fun getPlayerId(): String? = withContext(Dispatchers.IO) {
-        if (!isInitialized) {
-            android.util.Log.w("NotificationRepository", "OneSignal no está inicializado")
-            return@withContext null
-        }
-        
+    fun getRegistrationId(): String {
+        return JPushInterface.getRegistrationID(App.context)
+    }
+    
+    /**
+     * Verifica si JPush está disponible y configurado
+     */
+    fun isJPushAvailable(): Boolean {
+        val appKey = SupabaseConfig.JPUSH_APP_KEY
+        return appKey.isNotBlank() && appKey != "TU_JPUSH_APP_KEY_AQUI" && isInitialized
+    }
+    
+    /**
+     * Establece un alias para identificar al usuario
+     * Esto permite enviar notificaciones a usuarios específicos
+     */
+    fun setAlias(context: Context, alias: String, callback: ((Int: Int, Set<String>?, Int) -> Unit)? = null) {
         try {
-            // ✅ API CORRECTA para OneSignal 5.6.1+
-            // OneSignal 5.x usa pushSubscription.id en lugar de getDeviceState().userId
-            
-            // Esperar a que OneSignal esté listo (máximo 5 segundos)
-            val latch = CountDownLatch(1)
-            var playerId: String? = null
-            
-            // Suscribirse a cambios en el push subscription
-            val observer = { state: com.onesignal.user.subscriptions.IPushSubscriptionState ->
-                playerId = state.id
-                latch.countDown()
-            }
-            
-            // Agregar observer
-            OneSignal.User.pushSubscription.addObserver(observer)
-            
-            // Verificar si ya tenemos el ID
-            val existingId = OneSignal.User.pushSubscription.id
-            if (!existingId.isNullOrBlank()) {
-                OneSignal.User.pushSubscription.removeObserver(observer)
-                return@withContext existingId
-            }
-            
-            // Esperar a que llegue el ID
-            val awaited = latch.await(5, TimeUnit.SECONDS)
-            
-            // Remover observer
-            OneSignal.User.pushSubscription.removeObserver(observer)
-            
-            if (awaited && !playerId.isNullOrBlank()) {
-                android.util.Log.d("NotificationRepository", "Player ID obtenido: $playerId")
-                return@withContext playerId
-            } else {
-                android.util.Log.w("NotificationRepository", 
-                    "Timeout esperando Player ID de OneSignal")
-                return@withContext null
-            }
-            
+            JPushInterface.setAlias(context, 0, alias)
+            Log.d(TAG, "Alias establecido: $alias")
         } catch (e: Exception) {
-            android.util.Log.w("NotificationRepository", "Error getting Player ID", e)
-            return@withContext null
+            Log.e(TAG, "Error estableciendo alias", e)
         }
     }
     
     /**
-     * Obtiene el Player ID de forma asíncrona con callback
-     * Útil cuando no quieres usar coroutines
+     * Elimina el alias (cuando el usuario hace logout)
      */
-    fun getPlayerIdAsync(callback: (String?) -> Unit) {
-        if (!isInitialized) {
-            callback(null)
-            return
-        }
-        
+    fun deleteAlias(context: Context) {
         try {
-            // Verificar si ya tenemos el ID
-            val existingId = OneSignal.User.pushSubscription.id
-            if (!existingId.isNullOrBlank()) {
-                callback(existingId)
-                return
-            }
-            
-            // Esperar con observer
-            val observer = object : com.onesignal.user.subscriptions.IPushSubscriptionObserver {
-                override fun onPushSubscriptionChange(
-                    state: com.onesignal.user.subscriptions.IPushSubscriptionState
-                ) {
-                    if (!state.id.isNullOrBlank()) {
-                        OneSignal.User.pushSubscription.removeObserver(this)
-                        callback(state.id)
-                    }
-                }
-            }
-            
-            OneSignal.User.pushSubscription.addObserver(observer)
-            
-            // Timeout de 5 segundos
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                OneSignal.User.pushSubscription.removeObserver(observer)
-                callback(null)
-            }, 5000)
-            
+            JPushInterface.deleteAlias(context, 0)
+            Log.d(TAG, "Alias eliminado")
         } catch (e: Exception) {
-            callback(null)
+            Log.e(TAG, "Error eliminando alias", e)
         }
     }
     
     /**
-     * Verifica si OneSignal está disponible y configurado
+     * Establece tags para segmentación
      */
-    fun isOneSignalAvailable(): Boolean {
-        val appId = SupabaseConfig.ONESIGNAL_APP_ID
-        return appId.isNotBlank() && appId != "TU_ONESIGNAL_APP_ID_AQUI" && isInitialized
-    }
-    
-    /**
-     * Suscribe el dispositivo a un tema (opcional, para notificaciones grupales)
-     */
-    suspend fun subscribeToTopic(topic: String) = withContext(Dispatchers.IO) {
+    fun setTags(context: Context, tags: Set<String>, callback: ((Int, Set<String>?, Int) -> Unit)? = null) {
         try {
-            OneSignal.User.addTag(topic, "true")
-            android.util.Log.d("NotificationRepository", "Suscrito al tema: $topic")
+            JPushInterface.setTags(context, 0, tags)
+            Log.d(TAG, "Tags establecidos: $tags")
         } catch (e: Exception) {
-            android.util.Log.w("NotificationRepository", "Error subscribing to topic", e)
+            Log.e(TAG, "Error estableciendo tags", e)
         }
     }
     
     /**
-     * Desuscribe el dispositivo de un tema
+     * Detiene JPush (para cuando el usuario hace logout)
      */
-    suspend fun unsubscribeFromTopic(topic: String) = withContext(Dispatchers.IO) {
-        try {
-            OneSignal.User.removeTag(topic)
-            android.util.Log.d("NotificationRepository", "Desuscrito del tema: $topic")
-        } catch (e: Exception) {
-            android.util.Log.w("NotificationRepository", "Error unsubscribing from topic", e)
-        }
+    fun stopPush(context: Context) {
+        JPushInterface.stopPush(context)
+        Log.d(TAG, "JPush detenido")
     }
     
     /**
-     * Establece el ID de usuario externo (opcional, para vincular con tu sistema)
+     * Resume JPush (para cuando el usuario hace login)
      */
-    fun setExternalUserId(externalId: String) {
-        try {
-            OneSignal.User.setExternalId(externalId)
-            android.util.Log.d("NotificationRepository", "External ID establecido: $externalId")
-        } catch (e: Exception) {
-            android.util.Log.w("NotificationRepository", "Error setting external ID", e)
-        }
+    fun resumePush(context: Context) {
+        JPushInterface.resumePush(context)
+        Log.d(TAG, "JPush resumed")
     }
     
     /**
@@ -211,34 +139,61 @@ class NotificationRepository {
      */
     fun clearAllNotifications(context: Context) {
         try {
-            OneSignal.Notifications.clearAll()
+            JPushInterface.clearAllNotifications(context)
+            Log.d(TAG, "Notificaciones limpiadas")
         } catch (e: Exception) {
-            android.util.Log.w("NotificationRepository", "Error clearing notifications", e)
+            Log.e(TAG, "Error limpiando notificaciones", e)
         }
     }
     
     /**
      * Elimina una notificación específica por ID
      */
-    fun clearNotification(context: Context, notificationId: String) {
+    fun clearNotification(context: Context, notificationId: Int) {
         try {
-            OneSignal.Notifications.removeNotification(notificationId)
+            JPushInterface.clearNotificationById(context, notificationId)
+            Log.d(TAG, "Notificación $notificationId eliminada")
         } catch (e: Exception) {
-            android.util.Log.w("NotificationRepository", "Error clearing notification", e)
+            Log.e(TAG, "Error eliminando notificación", e)
         }
     }
     
     /**
-     * Verifica si el usuario tiene permiso para notificaciones
+     * Verifica si las notificaciones están habilitadas
      */
-    fun canRequestPermission(): Boolean {
-        return OneSignal.Notifications.canRequestPermission()
+    fun areNotificationsEnabled(context: Context): Boolean {
+        return JPushInterface.isNotificationEnabled(context) == 1
     }
     
     /**
-     * Solicita permiso para notificaciones (Android 13+)
+     * Abre la configuración de notificaciones del sistema
      */
-    fun requestPermission(callback: (Boolean) -> Unit) {
-        OneSignal.Notifications.requestPermission(callback)
+    fun openNotificationSettings(context: Context) {
+        try {
+            JPushInterface.goToAppSettings(context)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error abriendo settings", e)
+        }
+    }
+}
+
+/**
+ * Data class para los datos de notificación recibidos
+ */
+data class JPushNotificationData(
+    val title: String,
+    val message: String,
+    val extras: Map<String, String>,
+    val notificationId: Int,
+    val messageId: String
+)
+
+/**
+ * Referencia al contexto de la aplicación
+ */
+class App {
+    companion object {
+        lateinit var context: Context
+            private set
     }
 }

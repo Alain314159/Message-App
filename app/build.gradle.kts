@@ -19,7 +19,11 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "2.1-supabase-fixed"
+        versionName = "2.2-jpush" // Nueva versión con JPush
+        
+        // JPush AppKey - Reemplaza con tu AppKey de JPush
+        manifestPlaceholders["JPUSH_APPKEY"] = "TU_JPUSH_APP_KEY_AQUI"
+        
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -137,9 +141,9 @@ dependencies {
     // Kotlinx Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
 
-    // OneSignal 5.7.3
-    implementation("com.onesignal:OneSignal:5.7.3")
-
+    // JPush (Aurora Mobile) - GRÁTIS y funciona desde Cuba
+    implementation("cn.jiguang.jpush:jpush:4.3.8")
+    
     // Google Sign In
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation("androidx.credentials:credentials:1.5.0-rc01")
