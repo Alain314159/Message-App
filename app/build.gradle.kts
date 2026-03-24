@@ -166,6 +166,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.1")
 }
 
+// Plugins de calidad de código comentados - los plugins no están aplicados
+// Descomentar solo cuando se necesiten y los plugins estén configurados
+/*
 detekt {
     config.setFrom(file("${rootProject.projectDir}/config/detekt/detekt.yml"))
     buildUponDefaultConfig = true
@@ -173,7 +176,7 @@ detekt {
     parallel = true
     ignoreFailures = true
     basePath = rootProject.projectDir.absolutePath
-    
+
     reports {
         html.enabled = true
         xml.enabled = true
@@ -192,3 +195,4 @@ ktlint {
         include("**/kotlin/**")
     }
 }
+*/
