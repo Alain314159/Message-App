@@ -210,4 +210,3 @@ ktlint {
         include("**/kotlin/**")
     }
 }
-*/
