@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 
+// ✅ ERR-009: Tag constante para logging
+private const val TAG = "MessageApp"
+
 /**
  * ViewModel de Chat Individual
  *
@@ -46,10 +49,16 @@ class ChatViewModel(
     /**
      * Empieza a observar un chat específico
      * Debe llamarse cuando se abre el chat
+     * 
+     * ✅ CORREGIDO ERR-007: Ahora valida parámetros
      */
     fun start(chatId: String, myUid: String) {
-        if (currentChatId == chatId) return
+        // ✅ Validar parámetros (ERR-007)
+        require(chatId.isNotBlank()) { "chatId no puede estar vacío" }
+        require(myUid.isNotBlank()) { "myUid no puede estar vacío" }
         
+        if (currentChatId == chatId) return
+
         currentChatId = chatId
         currentUserId = myUid
         _isLoading.value = true
@@ -137,30 +146,36 @@ class ChatViewModel(
     /**
      * Descifra un mensaje cifrado
      * Debe llamarse en la UI para mostrar el mensaje
-     * 
-     * ✅ DESCIFRADO: Usa Android Keystore + AES-256-GCM
+     *
+     * ✅ CORREGIDO ERR-002: Maneja nulls correctamente
      */
     fun decryptMessage(message: Message): String {
+        // ✅ Validar tipo primero
         if (message.type == "deleted") {
             return "[Mensaje eliminado]"
         }
-        
+
+        // ✅ Validar texto cifrado
         if (message.textEnc.isNullOrBlank()) {
             return ""
         }
+
+        // ✅ Validar nonce (ERR-002)
+        if (message.nonce.isNullOrBlank()) {
+            return "[Error: Clave de cifrado faltante]"
+        }
         
+        val chatId = currentChatId ?: return "[Error: Chat no disponible]"
+
         try {
-            val chatId = currentChatId ?: return "[Error: Chat no disponible]"
-            
-            // ✅ API CORRECTA: E2ECipher.decrypt() con chatId
             // Reconstruir mensaje cifrado (formato: iv:ciphertext)
             val encrypted = "${message.nonce}:${message.textEnc}"
-            
+
             // Descifrar
             return E2ECipher.decrypt(encrypted, chatId)
-            
+
         } catch (e: Exception) {
-            android.util.Log.w("ChatViewModel", "Decrypt failed", e)
+            android.util.Log.w(TAG, "Decrypt failed", e)
             return "[Error: No se pudo descifrar]"
         }
     }

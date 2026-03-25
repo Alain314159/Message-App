@@ -34,11 +34,13 @@ class ChatRepository {
     /**
      * Genera un ID único para chat directo entre 2 usuarios
      * El ID es determinista (siempre el mismo para los mismos usuarios)
-     * 
+     *
      * Nota: Para UUIDs, usamos el formato ordenado para evitar duplicados
+     * 
+     * ✅ CORREGIDO ERR-004: Ahora trimea whitespace
      */
     fun directChatIdFor(uidA: String, uidB: String): String {
-        return listOf(uidA, uidB).sorted().joinToString("_")
+        return listOf(uidA.trim(), uidB.trim()).sorted().joinToString("_")
     }
     
     /**
@@ -234,11 +236,13 @@ class ChatRepository {
     
     /**
      * Envía un mensaje de texto cifrado
-     * 
+     *
      * @param chatId ID del chat
      * @param senderId UID del remitente
      * @param textEnc Texto cifrado (ciphertext)
      * @param iv IV de cifrado (reemplaza a nonce)
+     * 
+     * ✅ CORREGIDO ERR-003: Ahora valida parámetros
      */
     suspend fun sendText(
         chatId: String,
@@ -246,6 +250,12 @@ class ChatRepository {
         textEnc: String,
         iv: String
     ) = withContext(Dispatchers.IO) {
+        // ✅ Validar parámetros (ERR-003)
+        require(chatId.isNotBlank()) { "chatId no puede estar vacío" }
+        require(senderId.isNotBlank()) { "senderId no puede estar vacío" }
+        require(textEnc.isNotBlank()) { "textEnc no puede estar vacío" }
+        require(iv.isNotBlank()) { "iv no puede estar vacío" }
+        
         try {
             db.from("messages").insert(
                 mapOf(
@@ -279,6 +289,8 @@ class ChatRepository {
     
     /**
      * Marca un mensaje como entregado
+     * 
+     * ✅ CORREGIDO ERR-006: Ahora loggea errores
      */
     suspend fun markDelivered(chatId: String, messageId: String, uid: String) = withContext(Dispatchers.IO) {
         try {
@@ -292,7 +304,8 @@ class ChatRepository {
                 }
             }
         } catch (e: Exception) {
-            // Ignorar errores silenciosamente
+            // ✅ ERR-006: Loggear error en lugar de silenciar
+            android.util.Log.w("ChatRepository", "Mark delivered failed: $messageId", e)
         }
     }
     
