@@ -38,9 +38,33 @@ jobs:
     - name: Dar permisos a Gradle Wrapper
       run: chmod +x gradlew
       
-    # 5. Ejecutar tests unitarios
-    - name: Ejecutar Tests Unitarios
-      run: ./gradlew test --no-daemon --console=plain
+    # 5. Ejecutar tests unitarios CON TODOS LOS WARNINGS Y ERRORES
+    - name: Ejecutar Tests Unitarios (Verbose)
+      run: |
+        echo "=== INICIANDO TESTS CON TODOS LOS WARNINGS Y ERRORES ==="
+        echo "Gradle version: $(./gradlew --version | grep Gradle)"
+        echo ""
+        echo "=== Ejecutando tests con --warning-mode all --stacktrace --info ==="
+        ./gradlew test \
+          --no-daemon \
+          --console=plain \
+          --warning-mode all \
+          --stacktrace \
+          --info \
+          2>&1 | tee test-full-output.log
+        
+        echo ""
+        echo "=== RESUMEN DE ERRORES Y WARNINGS ==="
+        echo "Errores encontrados:"
+        grep -i "error" test-full-output.log || echo "No se encontraron errores"
+        echo ""
+        echo "Warnings encontrados:"
+        grep -i "warning" test-full-output.log || echo "No se encontraron warnings"
+        echo ""
+        echo "Deprecated features:"
+        grep -i "deprecated" test-full-output.log || echo "No se encontraron deprecated"
+        echo ""
+        echo "=== FIN DEL RESUMEN ==="
       
     # 6. Subir reporte de tests como artifact
     - name: Subir Reporte de Tests
@@ -58,4 +82,13 @@ jobs:
       with:
         name: test-logs
         path: app/build/test-results/
+        retention-days: 7
+
+    # 8. Subir log completo con TODOS los warnings y errores
+    - name: Subir Log Completo (Verbose)
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: test-full-output-log
+        path: test-full-output.log
         retention-days: 7

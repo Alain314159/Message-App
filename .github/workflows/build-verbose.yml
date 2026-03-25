@@ -1,0 +1,127 @@
+name: Build Completo (Verbose)
+
+# Workflow para build completo mostrando TODOS los errores y warnings
+# Se ejecuta manualmente o con push a main
+
+on:
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      show_stacktrace:
+        description: 'Mostrar stacktrace completo en errores'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      warning_mode:
+        description: 'Modo de warnings'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - summary
+          - none
+
+jobs:
+  build:
+    name: Build Completo con Todos los Warnings
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 1. Checkout
+    - name: Checkout del código
+      uses: actions/checkout@v5
+
+    # 2. Setup Java
+    - name: Configurar JDK 17
+      uses: actions/setup-java@v5
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # 3. Cache Gradle
+    - name: Cache de Gradle
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          gradle-${{ runner.os }}-
+
+    # 4. Setup Gradle Wrapper
+    - name: Dar permisos a Gradle Wrapper
+      run: chmod +x gradlew
+
+    # 5. Build Debug APK (MOSTRANDO TODOS LOS WARNINGS Y ERRORES)
+    - name: Build Debug APK (Verbose)
+      run: |
+        echo "========================================"
+        echo "=== BUILD COMPLETO CON WARNINGS ==="
+        echo "========================================"
+        echo ""
+        echo "Configuración:"
+        echo "- Warning Mode: ${{ github.event.inputs.warning_mode || 'all' }}"
+        echo "- Stacktrace: ${{ github.event.inputs.show_stacktrace || 'true' }}"
+        echo ""
+        
+        STACKTRACE_FLAG=""
+        if [ "${{ github.event.inputs.show_stacktrace }}" == "true" ]; then
+          STACKTRACE_FLAG="--stacktrace"
+        fi
+        
+        ./gradlew clean assembleDebug \
+          --no-daemon \
+          --console=plain \
+          --warning-mode ${{ github.event.inputs.warning_mode || 'all' }} \
+          $STACKTRACE_FLAG \
+          2>&1 | tee build-verbose-output.log
+        
+        echo ""
+        echo "========================================"
+        echo "=== RESUMEN DE ERRORES ==="
+        echo "========================================"
+        echo ""
+        echo "🔴 ERRORES ENCONTRADOS:"
+        grep -i "error:" build-verbose-output.log || echo "✅ No se encontraron errores"
+        echo ""
+        echo "🟡 WARNINGS ENCONTRADOS:"
+        grep -i "warning:" build-verbose-output.log || echo "✅ No se encontraron warnings"
+        echo ""
+        echo "⚠️ DEPRECATED:"
+        grep -i "deprecated" build-verbose-output.log || echo "✅ No se encontraron deprecated"
+        echo ""
+        echo "========================================"
+
+    # 6. Subir APK
+    - name: Upload Debug APK
+      if: success()
+      uses: actions/upload-artifact@v5
+      with:
+        name: app-debug-apk
+        path: app/build/outputs/apk/debug/*.apk
+        retention-days: 7
+
+    # 7. Subir log completo
+    - name: Upload Log Completo
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: build-verbose-log
+        path: build-verbose-output.log
+        retention-days: 7
+
+    # 8. Subir reporte de lint
+    - name: Upload Lint Report
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: lint-results
+        path: app/build/reports/lint-results-debug.html
+        retention-days: 7
+        if-no-files-found: ignore
