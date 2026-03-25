@@ -200,29 +200,28 @@ class PresenceRepository {
     
     /**
      * Obtiene el last seen de la pareja
-     * 
+     *
      * @param partnerId ID de la pareja
      * @return Timestamp en segundos o null
      */
     suspend fun getPartnerLastSeen(partnerId: String): Long? = withContext(Dispatchers.IO) {
         try {
-            val user = db.from("users")
+            val response = db.from("users")
                 .select(columns = Columns.list("last_seen")) {
                     filter { eq("id", partnerId) }
                 }
-                .decodeSingleOrNull<Chat>()
-            
-            (user as? Map<*, *>)?.get("last_seen") as? Long
+                .decodeSingleOrNull<UserLastSeenResponse>()
+
+            response?.lastSeen
         } catch (e: Exception) {
             null
         }
     }
-    
-    /**
-     * Detiene todos los listeners de presencia
-     * Debe llamarse cuando se destruye el ViewModel o la Activity
-     */
-    fun cleanup() {
-        // El cleanup se hace automáticamente con awaitClose en los flows
-    }
 }
+
+/**
+ * Data class para respuesta de last_seen
+ */
+private data class UserLastSeenResponse(
+    val lastSeen: Long?
+)

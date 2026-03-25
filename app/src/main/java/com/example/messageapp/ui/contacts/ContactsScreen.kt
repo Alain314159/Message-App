@@ -103,7 +103,14 @@ fun ContactsScreen(
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.weight(1f)
                                 )
-                                TextButton(onClick = { /* TODO: Eliminar contacto */ }) {
+                                TextButton(
+                                    onClick = { 
+                                        // TODO: Implementar eliminación de contacto
+                                        scope.launch {
+                                            // Implementar lógica de eliminación
+                                        }
+                                    }
+                                ) {
                                     Text("Eliminar")
                                 }
                             }
