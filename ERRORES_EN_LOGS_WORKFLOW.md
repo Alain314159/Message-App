@@ -1,32 +1,18 @@
-# 🔴 ERRORES ENCONTRADOS EN LOGS DE WORKFLOW (2026-03-28)
+# ✅ ERRORES EN LOGS DE WORKFLOW - ESTADO ACTUALIZADO (2026-03-28)
 
 **Fecha:** 2026-03-28  
-**Fuente:** Logs completos de GitHub Actions  
-**Estado:** 🔴 **ERRORES CRÍTICOS PENDIENTES**
+**Fuente:** Logs completos de GitHub Actions (2894 líneas analizadas)  
+**Estado:** 🟡 **ERRORES PARCIALMENTE CORREGIDOS**
 
 ---
 
-## 📊 ARCHIVOS DE LOG ANALIZADOS
+## ✅ ERRORES CORREGIDOS
 
-| Archivo | Líneas | Contenido |
-|---------|--------|-----------|
-| `build-debug.log` | 262 | Build completo fallido |
-| `build-verbose-output.log` | 60 | Build verbose |
-| `detekt-report.log` | 1113 | Reporte completo de detekt |
-| `ktlint-report.log` | 263 | Reporte de ktlint |
-| `lint-report.log` | 258 | Reporte de lint |
-| `test-full-output.log` | 938 | Tests completos |
-
-**Total líneas analizadas:** 2894
-
----
-
-## 🔴 ERRORES CRÍTICOS ENCONTRADOS
-
-### ERROR #1: Dependencias no encontradas ❌
+### ERROR #1: Dependencias no encontradas ✅ CORREGIDO
 
 **Archivo:** `build-debug.log`  
-**Severidad:** 🔴 **CRÍTICO - BUILD FALLA**
+**Severidad:** 🔴 **CRÍTICO - BUILD FALLA**  
+**Estado:** ✅ **CORREGIDO en commit baefe55**
 
 #### Error Completo:
 ```
@@ -36,53 +22,57 @@ FAILURE: Build failed with an exception.
 Execution failed for task ':app:checkDebugAarMetadata'.
 > Could not resolve all files for configuration ':app:debugRuntimeClasspath'.
    > Could not find io.ktor:ktor-client-plugins:3.4.1.
-     Searched in the following locations:
-       - https://dl.google.com/dl/android/maven2/io/ktor/ktor-client-plugins/3.4.1/ktor-client-plugins-3.4.1.pom
-       - https://repo.maven.apache.org/maven2/io/ktor/ktor-client-plugins/3.4.1/ktor-client-plugins-3.4.1.pom
-       - https://jitpack.io/io/ktor/ktor-client-plugins/3.4.1/ktor-client-plugins-3.4.1.pom
-       - https://maven.aliyun.com/repository/jcenter/io/ktor/ktor-client-plugins/3.4.1/ktor-client-plugins-3.4.1.pom
-       - https://maven.aliyun.com/repository/public/io/ktor/ktor-client-plugins/3.4.1/ktor-client-plugins-3.4.1.pom
    > Could not find cn.jiguang.jpush:jpush:4.3.9.
-     Searched in the following locations:
-       - https://dl.google.com/dl/android/maven2/cn/jiguang/jpush/jpush/4.3.9/jpush-4.3.9.pom
-       - https://repo.maven.apache.org/maven2/cn/jiguang/jpush/jpush/4.3.9/jpush-4.3.9.pom
-       - https://jitpack.io/cn/jiguang/jpush/jpush/4.3.9/jpush-4.3.9.pom
-       - https://maven.aliyun.com/repository/jcenter/cn/jiguang/jpush/jpush/4.3.9/jpush-4.3.9.pom
-       - https://maven.aliyun.com/repository/public/cn/jiguang/jpush/jpush/4.3.9/jpush-4.3.9.pom
 ```
 
-#### Solución Requerida:
+#### Solución Aplicada ✅:
 ```kotlin
 // En app/build.gradle.kts
 
-// 1. Agregar repositorios faltantes
-repositories {
-    google()
-    mavenCentral()
-    maven { url = uri("https://jitpack.io") }
-    maven { url = uri("https://maven.aliyun.com/repository/jcenter") }
-    maven { url = uri("https://maven.aliyun.com/repository/public") }
-    // Agregar repositorio para Ktor
-    maven { url = uri("https://repo.maven.apache.org/maven2") }
-}
+// Ktor - Cambiar versión 3.4.1 (no existe) → 2.3.13 (estable)
+implementation("io.ktor:ktor-client-android:2.3.13")
+implementation("io.ktor:ktor-client-core:2.3.13")
+implementation("io.ktor:ktor-utils:2.3.13")
+implementation("io.ktor:ktor-client-plugins:2.3.13")
+implementation("io.ktor:ktor-client-content-negotiation:2.3.13")
+implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.13")
 
-// 2. Verificar versiones correctas
-dependencies {
-    // Ktor - verificar versión disponible
-    implementation("io.ktor:ktor-client-android:2.3.13")  // Cambiar a versión disponible
-    implementation("io.ktor:ktor-client-core:2.3.13")
-    
-    // JPush - verificar versión disponible
-    implementation("cn.jiguang.jpush:jpush:4.3.8")  // Cambiar a versión disponible
-}
+// JPush - Cambiar versión 4.3.9 (no existe) → 4.3.8 (estable)
+implementation("cn.jiguang.jpush:jpush:4.3.8")
 ```
 
+**Commit:** `baefe55`  
+**Estado:** ✅ **CORREGIDO**
+
 ---
+
+### ERROR #6: UseCheckOrError ✅ CORREGIDO
+
+**Archivos:** `Chat.kt:70`, `AuthRepository.kt:156, 190, 397`, `E2ECipher.kt:83`  
+**Severidad:** 🟡 **WARNING**  
+**Estado:** ✅ **CORREGIDO en commit f95660b**
+
+#### Solución Aplicada ✅:
+```kotlin
+// ❌ ANTES: throw IllegalStateException
+throw IllegalStateException("User ID is null")
+
+// ✅ DESPUÉS: error()
+error("User ID is null")
+```
+
+**Commit:** `f95660b`  
+**Estado:** ✅ **CORREGIDO**
+
+---
+
+## 🔴 ERRORES PENDIENTES
 
 ### ERROR #2: ktlint falló al analizar AuthRepository.kt ❌
 
 **Archivo:** `ktlint-report.log`  
-**Severidad:** 🔴 **CRÍTICO - BUILD FALLA**
+**Severidad:** 🔴 **CRÍTICO - BUILD FALLA**  
+**Estado:** ⏳ Pendiente
 
 #### Error Completo:
 ```
@@ -98,14 +88,15 @@ Execution failed for task ':app:runKtlintCheckOverMainSourceSet'.
 #### Solución Requerida:
 1. Revisar sintaxis de `AuthRepository.kt`
 2. Verificar encoding del archivo (UTF-8)
-3. Ejecutar `ktlint --format` para corregir automáticamente
+3. Ejecutar `./gradlew ktlintFormat` para corregir automáticamente
 
 ---
 
 ### ERROR #3: Detekt falló con 850 issues ❌
 
 **Archivo:** `detekt-report.log`  
-**Severidad:** 🔴 **CRÍTICO - BUILD FALLA**
+**Severidad:** 🔴 **CRÍTICO - BUILD FALLA**  
+**Estado:** ⏳ Pendiente
 
 #### Error Completo:
 ```
@@ -126,7 +117,7 @@ detekt {
     config.setFrom(files("config/detekt/detekt.yml"))
     buildUponDefaultConfig = true
     allRules = false
-    ignoreFailures = true  // Cambiar a true temporalmente
+    ignoreFailures = true  # Cambiar a true temporalmente
     // O aumentar el threshold
     maxIssues = 1000  // Aumentar de 0 a 1000
 }
@@ -140,7 +131,8 @@ detekt {
 
 **Archivo:** `app/src/test/java/com/example/messageapp/data/AuthRepositoryNetworkErrorTest.kt`  
 **Línea:** 21  
-**Severidad:** 🟡 **WARNING**
+**Severidad:** 🟡 **WARNING**  
+**Estado:** ⏳ Pendiente
 
 #### Error:
 ```
@@ -166,7 +158,8 @@ Defined threshold inside classes is set to '11'
 **Archivo:** `AuthRepositoryNetworkErrorTest.kt`  
 **Múltiples líneas:** 35, 51, 66, 81, 100, 115, 130, 145, 160, 179, 190, 201, 216, 231, 242, 257, 268, 279, 294, 305, 316, 331, 345, 359, 377, 388, 399, 414, 428, 446, 463, 480, 500, 515, 530
 
-**Severidad:** 🟡 **WARNING**
+**Severidad:** 🟡 **WARNING**  
+**Estado:** ⏳ Pendiente
 
 #### Error:
 ```
@@ -201,63 +194,16 @@ naming:
 
 ---
 
-### ERROR #6: UseCheckOrError
-
-**Archivos:** `Chat.kt:70`, `AuthRepository.kt:156, 190, 397`, `E2ECipher.kt:83`  
-**Severidad:** 🟡 **WARNING**
-
-#### Error:
-```
-Use check() or error() instead of throwing an IllegalStateException.
-```
-
-#### Código Problemático:
-```kotlin
-// ❌ ANTES: throw IllegalStateException
-throw IllegalStateException("User ID is null after anonymous sign up")
-
-// ✅ DESPUÉS: check() o error()
-check(false) { "User ID is null after anonymous sign up" }
-// O
-error("User ID is null after anonymous sign up")
-```
-
-#### Solución:
-```kotlin
-// En Chat.kt:70
-// ❌ ANTES
-throw IllegalStateException("User $userId no está en el chat (memberIds: $memberIds)")
-
-// ✅ DESPUÉS
-error("User $userId no está en el chat (memberIds: $memberIds)")
-
-// En AuthRepository.kt:156, 190, 397
-// ❌ ANTES
-throw IllegalStateException("User ID is null")
-
-// ✅ DESPUÉS
-check(authResult.user != null) { "User ID is null" }
-
-// En E2ECipher.kt:83
-// ❌ ANTES
-throw IllegalStateException("IV tamaño incorrecto")
-
-// ✅ DESPUÉS
-check(iv.size == 12) { "IV tamaño incorrecto: ${iv.size}" }
-```
-
----
-
 ## 📊 RESUMEN DE ERRORES
 
-| Error | Tipo | Severidad | Estado |
-|-------|------|-----------|--------|
-| Dependencias no encontradas | Build | 🔴 CRÍTICO | ⏳ Pendiente |
-| ktlint falló en AuthRepository | Build | 🔴 CRÍTICO | ⏳ Pendiente |
-| Detekt 850 issues | Build | 🔴 CRÍTICO | ⏳ Pendiente |
-| TooManyFunctions (36 funciones) | Code Quality | 🟡 WARNING | ⏳ Pendiente |
-| FunctionNaming (35 funciones) | Code Quality | 🟡 WARNING | ⏳ Pendiente |
-| UseCheckOrError (5 lugares) | Code Quality | 🟡 WARNING | ⏳ Pendiente |
+| Error | Tipo | Severidad | Estado | Commit |
+|-------|------|-----------|--------|--------|
+| Dependencias no encontradas | Build | 🔴 Crítico | ✅ **CORREGIDO** | `baefe55` |
+| ktlint falló en AuthRepository | Build | 🔴 Crítico | ⏳ Pendiente | - |
+| Detekt 850 issues | Build | 🔴 Crítico | ⏳ Pendiente | - |
+| TooManyFunctions (36 funciones) | Code Quality | 🟡 Warning | ⏳ Pendiente | - |
+| FunctionNaming (35 funciones) | Code Quality | 🟡 Warning | ⏳ Pendiente | - |
+| UseCheckOrError (5 lugares) | Code Quality | 🟡 Warning | ✅ **CORREGIDO** | `f95660b` |
 
 ---
 
@@ -265,48 +211,40 @@ check(iv.size == 12) { "IV tamaño incorrecto: ${iv.size}" }
 
 ### Prioridad 1: Errores Críticos de Build
 
-1. **Dependencias no encontradas**
-   - Verificar versiones de Ktor y JPush
-   - Agregar repositorios faltantes
-   - Ejecutar `./gradlew build --refresh-dependencies`
-
-2. **ktlint falló en AuthRepository**
+1. **ktlint falló en AuthRepository** ⏳ Pendiente
    - Revisar sintaxis del archivo
    - Ejecutar `./gradlew ktlintFormat`
    - Corregir errores de encoding
 
-3. **Detekt 850 issues**
+2. **Detekt 850 issues** ⏳ Pendiente
    - Aumentar `maxIssues` temporalmente
    - O cambiar `ignoreFailures = true`
    - Corregir issues gradualmente
 
 ### Prioridad 2: Code Quality
 
-4. **TooManyFunctions**
+3. **TooManyFunctions** ⏳ Pendiente
    - Dividir `AuthRepositoryNetworkErrorTest.kt` en 4 archivos
 
-5. **FunctionNaming**
+4. **FunctionNaming** ⏳ Pendiente
    - Configurar detekt para permitir backticks en tests
    - O renombrar funciones sin backticks
-
-6. **UseCheckOrError**
-   - Reemplazar `throw IllegalStateException` con `check()` o `error()`
 
 ---
 
 ## 📝 NOTAS ADICIONALES
 
-### Dependencias Problemáticas
+### Dependencias Corregidas
 
-**Ktor 3.4.1:**
-- Versión no encontrada en repositorios
-- Solución: Usar versión 2.3.13 (última estable verificada)
+**Ktor:**
+- Versión incorrecta: `3.4.1` (no existe)
+- Versión corregida: `2.3.13` (última estable 2.x)
 
-**JPush 4.3.9:**
-- Versión no encontrada en repositorios
-- Solución: Usar versión 4.3.8 (última estable verificada)
+**JPush:**
+- Versión incorrecta: `4.3.9` (no existe)
+- Versión corregida: `4.3.8` (última estable)
 
-### Configuración de Detekt
+### Configuración de Detekt Recomendada
 
 ```yaml
 # config/detekt/detekt.yml
@@ -318,7 +256,7 @@ naming:
   FunctionNaming:
     active: true
     ignoreAnnotated: ['Test', 'ParameterizedTest']
-    functionPattern: '([a-z][a-zA-Z0-9]*)|(`.*`)'
+    functionPattern: '([a-z][a-zA-Z0-9]*)|(`.*`)'  # Permitir backticks
 
 complexity:
   TooManyFunctions:
@@ -328,6 +266,18 @@ complexity:
 
 ---
 
+## 📈 PROGRESO DE CORRECCIONES
+
+| Estado | Cantidad |
+|--------|----------|
+| ✅ Corregidos | 2 |
+| ⏳ Pendientes | 4 |
+| **Total** | **6** |
+
+**Progreso:** 33% completado (2/6 errores corregidos)
+
+---
+
 **Última actualización:** 2026-03-28  
-**Responsable:** Análisis exhaustivo de logs  
-**Estado:** 🔴 **ERRORES CRÍTICOS PENDIENTES DE CORRECCIÓN**
+**Responsable:** Análisis exhaustivo de logs + correcciones  
+**Estado:** 🟡 **ERRORES PARCIALMENTE CORREGIDOS (2/6)**
