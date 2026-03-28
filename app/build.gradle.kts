@@ -207,11 +207,12 @@ detekt {
         sarif.enabled = true
     }
 }
+*/
 
 /*
  * BLOQUE COMENTADO - API de ktlint cambió en v12.0.0+
  * El filtro 'generated' ya no existe
- * 
+ *
  * Si necesitas ktlint en el futuro, usar:
  * ktlint {
  *     android = true
