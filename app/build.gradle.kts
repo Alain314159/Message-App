@@ -73,8 +73,8 @@ android {
     }
 
     lint {
-        abortOnError = false
-        checkReleaseBuilds = false
+        abortOnError = true  // ✅ Abortar si hay errores de lint
+        checkReleaseBuilds = true  // ✅ Checkear builds release
         // baseline = file("lint-baseline.xml")  // Comentado hasta crear el archivo
         xmlReport = true
         htmlReport = true
@@ -83,7 +83,7 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
-            isReturnDefaultValues = true
+            isReturnDefaultValues = false  // ✅ Fallar si hay mocks sin configurar (NO devolver valores por defecto)
         }
     }
 
