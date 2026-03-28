@@ -1,8 +1,26 @@
+# ⚠️ ARCHIVO OBSOLETO - NO USAR
+
+**Estado:** ❌ **INFORMACIÓN INCORRECTA**
+**Fecha:** 2026-03-28
+**Razón:** Este archivo contiene información errónea sobre:
+
+1. ❌ Paquete de Supabase: Decía `io.github.jan.supabase` es correcto → **FALSO**, el correcto es `io.github.jan-tennert.supabase` (v3.4.1)
+2. ❌ Recomendación OneSignal → **MAL CONSEJO**, OneSignal está bloqueado en Cuba, JPush es mejor opción
+3. ❌ Crítica a Android Keystore → **INCORRECTO**, Android Keystore es mejor práctica que libsodium para Android
+
+**Archivo correcto para consultar:** `ESTADO_VERDADERO_PROYECTO.md`
+
+---
+
 # 🔴 ERRORES ENCONTRADOS Y CORRECCIONES - MIGRACIÓN SUPABASE
 
-## ⚠️ IMPORTANTE: ESTE DOCUMENTO CONTIENE TODOS LOS ERRORES Y SUS SOLUCIONES
+## ⚠️ IMPORTANTE: ESTE DOCUMENTO CONTIENE INFORMACIÓN OBSOLETA
 
-Después de revisar exhaustivamente el código y verificar con la documentación oficial actualizada (Marzo 2026), encontré **ERRORES CRÍTICOS** que deben corregirse.
+La información en este archivo **NO ES CONFIABLE**. Fue escrita basándose en documentación desactualizada de Marzo 2026.
+
+**Consultar en su lugar:** `ESTADO_VERDADERO_PROYECTO.md`
+
+---
 
 ---
 

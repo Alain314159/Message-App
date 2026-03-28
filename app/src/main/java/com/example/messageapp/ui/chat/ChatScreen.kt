@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -28,19 +29,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.messageapp.data.ChatRepository
 import com.example.messageapp.data.StorageRepository
 import com.example.messageapp.model.Message
-import com.example.messageapp.storage.StorageAcl
+import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.viewmodel.ChatViewModel
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+
+// ✅ TAG constante para logging consistente
+private const val TAG = "MessageApp"
 
 @Composable
 fun ChatScreen(chatId: String, vm: ChatViewModel, onBack: () -> Unit = {}, onOpenInfo: (String) -> Unit = {}) {
-    val chat by vm.chat.collectAsState()
-    val msgs by vm.messages.collectAsState()
-    val myUid = remember { FirebaseAuth.getInstance().currentUser?.uid.orEmpty() }
+    // ✅ CORREGIDO: collectAsStateWithLifecycle en lugar de collectAsState
+    val chat by vm.chat.collectAsStateWithLifecycle()
+    val msgs by vm.messages.collectAsStateWithLifecycle()
+    // ✅ CORREGIDO: Usar Supabase en lugar de Firebase
+    val myUid = remember { SupabaseConfig.client.auth.currentUserOrNull()?.id?.value.orEmpty() }
     val scope = rememberCoroutineScope()
     var input by remember { mutableStateOf(TextFieldValue("")) }
     var query by remember { mutableStateOf(TextFieldValue("")) }
@@ -58,32 +65,94 @@ fun ChatScreen(chatId: String, vm: ChatViewModel, onBack: () -> Unit = {}, onOpe
     val showScrollToBottom by remember { derivedStateOf { listState.canScrollForward } }
 
     LaunchedEffect(chatId) {
-        vm.start(chatId)
-        if (myUid.isNotBlank()) { vm.markRead(chatId, myUid); StorageAcl.ensureMemberMarker(chatId, myUid) }
+        vm.start(chatId, myUid)
+        // ✅ CORREGIDO: Nombres de métodos correctos + eliminar StorageAcl
+        if (myUid.isNotBlank()) { 
+            vm.markAsRead(chatId, myUid)
+            // StorageAcl migrado a Supabase Storage - pendiente de implementación
+        }
     }
     DisposableEffect(Unit) { onDispose { vm.stop() } }
 
     Scaffold(
-        topBar = { ChatTopBar(ChatTopBarState(chat?.name, chat?.pinnedSnippet != null, chat?.pinnedSnippet), onBack, { onOpenInfo(chatId) }, { vm.unpin(chatId) }) },
+        topBar = { 
+            ChatTopBar(
+                ChatTopBarState(
+                    chat?.name, 
+                    chat?.pinnedSnippet != null, 
+                    chat?.pinnedSnippet
+                ), 
+                onBack, 
+                { onOpenInfo(chatId) }, 
+                { vm.unpinMessage(chatId) } // ✅ CORREGIDO: unpinMessage en lugar de unpin
+            ) 
+        },
         floatingActionButton = {
             AnimatedVisibility(visible = showScrollToBottom, enter = fadeIn(), exit = fadeOut()) {
-                FloatingActionButton(onClick = { scope.launch { listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1) } }) {
+                FloatingActionButton(
+                    onClick = { 
+                        scope.launch { 
+                            listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1) 
+                        } 
+                    }
+                ) {
                     Icon(Icons.Filled.KeyboardArrowDown, "Ir al fim")
                 }
             }
         }
     ) { insets ->
         Column(Modifier.fillMaxSize().padding(insets)) {
-            if (chat?.pinnedSnippet != null) PinnedMessageBar(chat?.pinnedSnippet) { vm.unpin(chatId) }
-            OutlinedTextField(value = query, onValueChange = { query = it }, placeholder = { Text("Buscar…") }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(12.dp))
-            if (query.text.isNotBlank()) SearchNavigation(matchIds, currentMatchIdx) { currentMatchIdx = (it + matchIds.size) % matchIds.size }
+            if (chat?.pinnedSnippet != null) {
+                PinnedMessageBar(chat?.pinnedSnippet) { 
+                    vm.unpinMessage(chatId) // ✅ CORREGIDO: unpinMessage en lugar de unpin
+                }
+            }
+            OutlinedTextField(
+                value = query, 
+                onValueChange = { query = it }, 
+                placeholder = { Text("Buscar…") }, 
+                singleLine = true, 
+                modifier = Modifier.fillMaxWidth().padding(12.dp)
+            )
+            if (query.text.isNotBlank()) {
+                SearchNavigation(matchIds, currentMatchIdx) { 
+                    currentMatchIdx = (it + matchIds.size) % matchIds.size 
+                }
+            }
             ChatMessageList(grouped, listState, query.text.trim(), myUid) { selected = it }
             ChatAttachmentBar(pickers.image, pickers.video, pickers.audio, pickers.file)
             ChatMessageInput(input, { input = it }) {
                 val text = input.text.trim()
-                if (text.isNotBlank() && myUid.isNotBlank()) { vm.sendText(chatId, myUid, text); input = TextFieldValue("") }
+                if (text.isNotBlank() && myUid.isNotBlank()) { 
+                    vm.sendText(chatId, myUid, text)
+                    input = TextFieldValue("") 
+                }
             }
         }
     }
-    if (selected != null) ChatActionsDialog(ChatActionsDialogState(selected, selected!!.senderId == myUid, selected!!.deletedForAll == true), { vm.pin(chatId, selected!!) }, { scope.launch { repo.hideMessageForUser(chatId, selected!!.id, myUid); selected = null } }, { scope.launch { repo.deleteMessageForAll(chatId, selected!!.id); selected = null } }) { selected = null }
+    // ✅ CORREGIDO: Nombres de métodos correctos del ViewModel
+    // ✅ CORREGIDO: Eliminar !! usando safe calls
+    selected?.let { selectedMessage ->
+        ChatActionsDialog(
+            ChatActionsDialogState(
+                selectedMessage,
+                selectedMessage.senderId == myUid,
+                selectedMessage.deletedForAll == true
+            ),
+            onPin = { vm.pinMessage(chatId, selectedMessage) },
+            onHide = {
+                scope.launch {
+                    repo.deleteMessageForUser(chatId, selectedMessage.id, myUid)
+                    selected = null
+                }
+            },
+            onDelete = {
+                scope.launch {
+                    repo.deleteMessageForAll(chatId, selectedMessage.id)
+                    selected = null
+                }
+            },
+            onDismiss = { selected = null }
+        )
+    }
 }

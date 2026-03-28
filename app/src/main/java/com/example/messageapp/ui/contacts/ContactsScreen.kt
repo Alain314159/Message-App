@@ -63,7 +63,7 @@ fun ContactsScreen(
         val filtered = remember(items, query) {
             val q = query.text.trim()
             if (q.isBlank()) items
-            else items.filter { it.name.contains(q, true) || it.uid.contains(q, true) }
+            else items.filter { it.name.contains(q, true) || it.id.contains(q, true) }
         }
 
         Column(modifier.padding(insets).padding(16.dp)) {
@@ -91,7 +91,7 @@ fun ContactsScreen(
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(filtered) { contact ->
                         Card(
-                            onClick = { onOpenChat(contact.uid) },
+                            onClick = { onOpenChat(contact.id) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(

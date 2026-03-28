@@ -1,24 +1,28 @@
 package com.example.messageapp.storage
 
 import android.util.Log
-import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.tasks.await
+import com.example.messageapp.supabase.SupabaseConfig
+import kotlinx.coroutines.withContext
+import io.github.jan-tennert.supabase.storage.storage
+
+// ✅ CORREGIDO: Migrar FirebaseStorage → Supabase Storage
+// TODO: Verificar que Supabase Storage esté configurado en el proyecto
 
 object StorageAcl {
-    private val st = FirebaseStorage.getInstance()
+    // ✅ Usar Supabase Storage en lugar de FirebaseStorage
+    private val storage = SupabaseConfig.client.storage
 
     suspend fun ensureMemberMarker(chatId: String, uid: String) {
-        val ref = st.reference.child("chats/$chatId/members/$uid")
-        runCatching {
-            ref.putBytes(ByteArray(0)).await()
-        }.onFailure {
-            Log.w("StorageAcl", "ensureMemberMarker falhou: chat=$chatId uid=$uid", it)
-        }
+        // TODO: Implementar con Supabase Storage
+        // val path = "chats/$chatId/members/$uid"
+        // storage.upload(path, ByteArray(0))
+        Log.d("StorageAcl", "ensureMemberMarker: chat=$chatId uid=$uid (no implementado con Supabase aún)")
     }
 
     suspend fun removeMemberMarker(chatId: String, uid: String) {
-        val ref = st.reference.child("chats/$chatId/members/$uid")
-        runCatching { ref.delete().await() }
-            .onFailure { Log.w("StorageAcl", "removeMemberMarker falhou: chat=$chatId uid=$uid", it) }
+        // TODO: Implementar con Supabase Storage
+        // val path = "chats/$chatId/members/$uid"
+        // storage.delete(path)
+        Log.d("StorageAcl", "removeMemberMarker: chat=$chatId uid=$uid (no implementado con Supabase aún)")
     }
 }

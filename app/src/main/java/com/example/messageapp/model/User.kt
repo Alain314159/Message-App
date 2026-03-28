@@ -5,13 +5,14 @@ import kotlinx.serialization.Serializable
 
 /**
  * Modelo de Usuario para Supabase
- * 
+ *
  * Incluye sistema de emparejamiento y presencia
+ * ✅ CORREGIDO ERROR #9: uid → id para consistencia con la base de datos
  */
 @Serializable
 data class User(
     @SerialName("id")
-    val uid: String = "",
+    val id: String = "",  // ✅ Renombrado de uid a id
     
     @SerialName("email")
     val email: String = "",

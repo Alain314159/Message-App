@@ -60,9 +60,11 @@ data class Message(
 ) {
     /**
      * Calcula el estado actual del mensaje
+     * ✅ CORREGIDO ERROR #8: Manejar deletedForAll correctamente
      */
-    val status: MessageStatus
+    val status: MessageStatus?
         get() = when {
+            deletedForAll -> null  // ✅ Mensaje eliminado para todos
             readAt != null -> MessageStatus.READ      // Rosa Chanchita
             deliveredAt != null -> MessageStatus.DELIVERED  // Gris Koala
             else -> MessageStatus.SENT                // Gris Koala

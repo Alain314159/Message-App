@@ -224,7 +224,7 @@ fun FindPartnerScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.sendPairingRequest(foundUser?.uid ?: return@onClick)
+                        viewModel.sendPairingRequest(foundUser?.id ?: return@onClick)
                         showConfirmDialog = false
                     }
                 ) {

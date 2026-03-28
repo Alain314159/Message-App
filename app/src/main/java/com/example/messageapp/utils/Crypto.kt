@@ -1,6 +1,9 @@
 package com.example.messageapp.utils
 
 import android.util.Base64
+import android.util.Log
+
+private const val TAG = "MessageApp"
 
 object Crypto {
 
@@ -18,7 +21,8 @@ object Crypto {
 
         return try {
             String(Base64.decode(s, Base64.NO_WRAP))
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            Log.w(TAG, "Crypto: Falló decodificación Base64, retornando original", e)
             s
         }
     }

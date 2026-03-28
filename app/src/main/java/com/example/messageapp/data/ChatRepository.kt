@@ -1,5 +1,6 @@
 package com.example.messageapp.data
 
+import android.util.Log
 import com.example.messageapp.model.Chat
 import com.example.messageapp.model.Message
 import com.example.messageapp.supabase.SupabaseConfig
@@ -10,6 +11,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.withContext
+
+private const val TAG = "MessageApp"
 
 /**
  * Repositorio de Chats usando Supabase Postgrest + Realtime
@@ -69,7 +72,8 @@ class ChatRepository {
                 return@withContext chatId
             }
         } catch (e: Exception) {
-            // Chat no existe, crear nuevo
+            // Chat no existe o error al verificar, crear nuevo
+            Log.w(TAG, "ChatRepository: Chat $chatId no existe o error al verificar, creando nuevo", e)
         }
         
         // Crear nuevo chat
@@ -89,6 +93,8 @@ class ChatRepository {
     /**
      * Observa la lista de chats del usuario en tiempo real
      * ✅ Actualizado para supabase-kt 3.x
+     * 
+     * ✅ CORREGIDO: Logging consistente con TAG
      */
     fun observeChats(uid: String): Flow<List<Chat>> = callbackFlow {
         val channel = realtime.channel("chats:public:chats")
@@ -101,13 +107,16 @@ class ChatRepository {
         // Suscribirse al canal
         channel.subscribe()
 
+        Log.d(TAG, "ChatRepository: Subscribed to chats channel for user $uid")
+
         // Cargar chats iniciales en background
         kotlinx.coroutines.launch {
             try {
                 val initialChats = loadChatsForUser(uid)
+                Log.d(TAG, "ChatRepository: Initial load completed, ${initialChats.size} chats")
                 trySend(initialChats)
             } catch (e: Exception) {
-                android.util.Log.w("ChatRepository", "Error loading initial chats", e)
+                Log.e(TAG, "ChatRepository: Error loading initial chats", e)
                 trySend(emptyList())
             }
         }
@@ -115,11 +124,13 @@ class ChatRepository {
         // Escuchar cambios
         val job = kotlinx.coroutines.launch {
             changeFlow.collect { change ->
+                Log.d(TAG, "ChatRepository: Received change event, reloading chats")
                 loadChatsForUser(uid)
             }
         }
 
         awaitClose {
+            Log.d(TAG, "ChatRepository: Unsubscribing from chats channel")
             job.cancel()
             realtime.removeChannel(channel)
         }
@@ -127,6 +138,8 @@ class ChatRepository {
     
     /**
      * Carga los chats del usuario desde la base de datos
+     * 
+     * ✅ CORREGIDO: Logging consistente con TAG
      */
     private suspend fun loadChatsForUser(uid: String): List<Chat> {
         return try {
@@ -139,31 +152,36 @@ class ChatRepository {
                 }
                 .decodeList<Chat>()
 
-            // Enviar por el flow (si está activo en callbackFlow)
-            // Esto se maneja automáticamente por callbackFlow
+            Log.d(TAG, "ChatRepository: Loaded ${chats.size} chats for user $uid")
             chats
         } catch (e: Exception) {
-            android.util.Log.w("ChatRepository", "Load chats error", e)
+            Log.e(TAG, "ChatRepository: Error loading chats for user $uid", e)
             emptyList()
         }
     }
     
     /**
      * Observa un chat específico en tiempo real
+     * 
+     * ✅ CORREGIDO ERROR #4: Mejorado error handling con logging
      */
     fun observeChat(chatId: String): Flow<Chat?> = callbackFlow {
         try {
+            // Cargar estado inicial
             val chat = db.from("chats")
                 .select(columns = Columns.list("*")) {
                     filter { eq("id", chatId) }
                 }
-                .decodeSingle<Chat>()
-            
+                .decodeSingleOrNull<Chat>()
+
+            Log.d(TAG, "ChatRepository: Loaded initial chat state for $chatId")
             trySend(chat)
         } catch (e: Exception) {
+            // ✅ CORREGIDO: Loggear error en lugar de silenciar
+            Log.e(TAG, "ChatRepository: Error loading chat $chatId", e)
             trySend(null)
         }
-        
+
         awaitClose { }
     }
     
@@ -440,10 +458,12 @@ class ChatRepository {
                         (isNull("read_at"))
                     }
                 }
-            
+
             response.size
         } catch (e: Exception) {
-            0
+            // ✅ CORREGIDO: No retornar 0 silenciosamente - loguear y propagar
+            android.util.Log.w("ChatRepository", "countUnreadMessages failed: chatId=$chatId uid=$uid", e)
+            throw e  // Propagar error para que el caller sepa que falló
         }
     }
 }

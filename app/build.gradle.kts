@@ -24,8 +24,14 @@ android {
         versionCode = 1
         versionName = "2.3-jpush" // Versión con JPush y avatares
 
-        // JPush AppKey - Reemplaza con tu AppKey de JPush
-        manifestPlaceholders["JPUSH_APPKEY"] = "TU_JPUSH_APP_KEY_AQUI"
+        // JPush AppKey - Se carga desde gradle.properties
+        val jpushAppKey = project.findProperty("JPUSH_APP_KEY")?.toString() ?: "TU_JPUSH_APP_KEY_AQUI"
+        manifestPlaceholders["JPUSH_APPKEY"] = jpushAppKey
+
+        // Supabase credentials - Se cargan desde gradle.properties (BUILD CONFIG)
+        buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+        buildConfigField("String", "JPUSH_APP_KEY", "\"$jpushAppKey\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

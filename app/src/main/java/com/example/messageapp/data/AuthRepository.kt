@@ -1,6 +1,7 @@
 package com.example.messageapp.data
 
 import android.content.Context
+import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
@@ -17,6 +18,8 @@ import io.github.jan-tennert.supabase.postgrest.Postgrest
 import io.github.jan-tennert.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+private const val TAG = "MessageApp"
 
 /**
  * Repositorio de Autenticación usando Supabase Auth
@@ -91,6 +94,8 @@ class AuthRepository {
      * @param email Email del usuario
      * @param password Contraseña (mínimo 6 caracteres)
      * @return Result con el UID del usuario o la excepción
+     * 
+     * ✅ CORREGIDO: Logging consistente con TAG
      */
     suspend fun signUpWithEmail(email: String, password: String): Result<String> = withContext(Dispatchers.IO) {
         try {
@@ -115,20 +120,32 @@ class AuthRepository {
             // Crear perfil en la tabla users
             createUserProfile(uid, email)
 
-            android.util.Log.d("AuthRepository", "Usuario registrado: $uid")
+            Log.d(TAG, "AuthRepository: Usuario registrado: $uid")
             Result.success(uid)
 
         } catch (e: Exception) {
-            android.util.Log.w("AuthRepository", "Sign up error: ${e.message}", e)
+            Log.e(TAG, "AuthRepository: Sign up error: ${e.message}", e)
             Result.failure(e)
         }
     }
     
     /**
      * Login con email y password
+     * 
+     * ✅ CORREGIDO ERROR #19: Validación de email agregada
      */
     suspend fun signInWithEmail(email: String, password: String): Result<String> = withContext(Dispatchers.IO) {
         try {
+            // ✅ CORREGIDO ERROR #19: Validar email antes
+            if (!isValidEmail(email)) {
+                return@withContext Result.failure(IllegalArgumentException("Email inválido"))
+            }
+
+            // Validar password
+            if (password.isBlank()) {
+                return@withContext Result.failure(IllegalArgumentException("Password no puede estar vacío"))
+            }
+
             // ✅ API CORRECTA para supabase-kt 3.x
             auth.signInWith(Email) {
                 email = email
@@ -141,11 +158,11 @@ class AuthRepository {
             // Verificar/actualizar perfil
             upsertUserProfile(uid)
 
-            android.util.Log.d("AuthRepository", "Usuario logueado: $uid")
+            Log.d(TAG, "AuthRepository: Usuario logueado: $uid")
             Result.success(uid)
 
         } catch (e: Exception) {
-            android.util.Log.w("AuthRepository", "Sign in error: ${e.message}", e)
+            Log.e(TAG, "AuthRepository: Sign in error: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -155,6 +172,8 @@ class AuthRepository {
      *
      * Nota: Supabase no soporta login anónimo nativo en el plan free.
      * Esta implementación crea un usuario con email temporal único.
+     * 
+     * ✅ CORREGIDO: Logging consistente con TAG
      */
     suspend fun signInAnonymously(): Result<String> = withContext(Dispatchers.IO) {
         try {
@@ -183,17 +202,19 @@ class AuthRepository {
                 )
             )
 
-            android.util.Log.d("AuthRepository", "Usuario anónimo creado: $uid")
+            Log.d(TAG, "AuthRepository: Usuario anónimo creado: $uid")
             Result.success(uid)
 
         } catch (e: Exception) {
-            android.util.Log.w("AuthRepository", "Anonymous sign in error", e)
+            Log.e(TAG, "AuthRepository: Anonymous sign in error", e)
             Result.failure(e)
         }
     }
-    
+
     /**
      * Crea el perfil inicial del usuario en la tabla users
+     * 
+     * ✅ CORREGIDO: Logging consistente con TAG
      */
     private suspend fun createUserProfile(uid: String, email: String) = withContext(Dispatchers.IO) {
         try {
@@ -208,15 +229,17 @@ class AuthRepository {
                     "updated_at" to (System.currentTimeMillis() / 1000)
                 )
             )
-            android.util.Log.d("AuthRepository", "Perfil creado para: $uid")
+            Log.d(TAG, "AuthRepository: Perfil creado para: $uid")
         } catch (e: Exception) {
-            android.util.Log.w("AuthRepository", "Create profile error", e)
+            Log.e(TAG, "AuthRepository: Create profile error", e)
             throw e
         }
     }
     
     /**
      * Actualiza o crea el perfil del usuario (idempotente)
+     * 
+     * ✅ CORREGIDO: Logging consistente con TAG
      */
     suspend fun upsertUserProfile(uid: String) = withContext(Dispatchers.IO) {
         try {
@@ -225,8 +248,8 @@ class AuthRepository {
                 .select(columns = Columns.list("id")) {
                     filter { eq("id", uid) }
                 }
-                .decodeSingle<User>()
-            
+                .decodeSingleOrNull<User>()
+
             if (existing != null) {
                 // Actualizar last_seen y online
                 db.from("users").update(
@@ -238,22 +261,25 @@ class AuthRepository {
                 ) {
                     filter { eq("id", uid) }
                 }
+                Log.d(TAG, "AuthRepository: Perfil actualizado para: $uid")
             } else {
                 // Crear perfil
                 val email = auth.currentSessionOrNull()?.user?.email ?: ""
                 createUserProfile(uid, email)
             }
         } catch (e: Exception) {
-            android.util.Log.w("AuthRepository", "Upsert profile error", e)
+            Log.e(TAG, "AuthRepository: Upsert profile error", e)
         }
     }
-    
+
     /**
      * Actualiza el estado de presencia del usuario (online/offline)
+     * 
+     * ✅ CORREGIDO: Logging consistente con TAG
      */
     suspend fun updatePresence(online: Boolean) = withContext(Dispatchers.IO) {
         val uid = getCurrentUserId() ?: return@withContext
-        
+
         try {
             db.from("users").update(
                 mapOf(
@@ -264,17 +290,20 @@ class AuthRepository {
             ) {
                 filter { eq("id", uid) }
             }
+            Log.d(TAG, "AuthRepository: Presencia actualizada: $uid online=$online")
         } catch (e: Exception) {
-            android.util.Log.w("AuthRepository", "Update presence error", e)
+            Log.e(TAG, "AuthRepository: Update presence error", e)
         }
     }
-    
+
     /**
      * Actualiza el JPush Registration ID para notificaciones push
+     * 
+     * ✅ CORREGIDO: Logging consistente con TAG
      */
     suspend fun updateJPushRegistrationId(registrationId: String) = withContext(Dispatchers.IO) {
         val uid = getCurrentUserId() ?: return@withContext
-        
+
         try {
             db.from("users").update(
                 mapOf(
@@ -284,9 +313,9 @@ class AuthRepository {
             ) {
                 filter { eq("id", uid) }
             }
-            android.util.Log.d("AuthRepository", "JPush Registration ID actualizado: $registrationId")
+            Log.d(TAG, "AuthRepository: JPush Registration ID actualizado: $registrationId")
         } catch (e: Exception) {
-            android.util.Log.w("AuthRepository", "Update JPush ID error", e)
+            Log.e(TAG, "AuthRepository: Update JPush ID error", e)
         }
     }
     

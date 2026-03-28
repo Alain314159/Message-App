@@ -1,0 +1,43 @@
+# ============================================
+# GRADLE PROPERTIES - PLANTILLA
+# ============================================
+# Copia este archivo a gradle.properties y reemplaza los valores
+# con tus credenciales reales.
+#
+# ⚠️ IMPORTANTE: NUNCA hagas commit de gradle.properties con credenciales reales
+# Este archivo (.example) es la única versión que debe estar en el repositorio.
+# ============================================
+
+# --------------------------------------------
+# SUPABASE CONFIGURATION
+# --------------------------------------------
+# Obtén estas credenciales de: https://supabase.com
+# 1. Inicia sesión en tu dashboard de Supabase
+# 2. Selecciona tu proyecto
+# 3. Ve a Settings → API
+# 4. Copia los valores:
+
+# URL del proyecto (ej: https://abcdefgh.supabase.co)
+SUPABASE_URL=https://h-2_uEBOtaXgANRmUTMsdQ.supabase.co
+
+# Anon/Public Key (comienza con "sb_publishable_")
+SUPABASE_ANON_KEY=sb_publishable_H-2_uEBOtaXgANRmUTMsdQ_qcTjP-WH
+
+# --------------------------------------------
+# JPUSH CONFIGURATION
+# --------------------------------------------
+# Obtén esta credencial de: https://www.jiguang.cn/
+# 1. Crea una cuenta en Jiguang/Aurora Mobile
+# 2. Registra tu aplicación
+# 3. Copia el App Key desde el dashboard
+
+JPUSH_APP_KEY=TU_JPUSH_APP_KEY_AQUI
+
+# --------------------------------------------
+# JVM ARGS (No modificar)
+# --------------------------------------------
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true
+android.suppressUnsupportedCompileSdk=36

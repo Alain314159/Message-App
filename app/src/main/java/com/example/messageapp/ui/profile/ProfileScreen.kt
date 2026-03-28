@@ -1,6 +1,7 @@
 package com.example.messageapp.ui.profile
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -16,11 +17,11 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.messageapp.data.AuthRepository
 import com.example.messageapp.data.ProfileRepository
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.messageapp.supabase.SupabaseConfig
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
+
+// Tag constante para logging
+private const val TAG = "MessageApp"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,25 +30,28 @@ fun ProfileScreen(
     onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val auth = remember { FirebaseAuth.getInstance() }
-    val db   = remember { FirebaseFirestore.getInstance() }
+    // ✅ CORREGIDO: Usar Supabase en lugar de Firebase
+    val client = remember { SupabaseConfig.client }
+    val auth = client.auth
     val scope = rememberCoroutineScope()
     val repo = remember { AuthRepository() }
     val profileRepo = remember { ProfileRepository() }
 
-    val uid = auth.currentUser?.uid ?: return
+    // ✅ CORREGIDO: Obtener usuario actual de Supabase
+    val uid = auth.currentUserOrNull()?.id?.value ?: return
 
-    var name by remember { mutableStateOf(auth.currentUser?.displayName ?: "") }
+    var name by remember { mutableStateOf("") }
     var bio  by remember { mutableStateOf("") }
-    var photoUrl by remember { mutableStateOf<String?>(auth.currentUser?.photoUrl?.toString()) }
+    var photoUrl by remember { mutableStateOf<String?>(null) }
     var msg by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
 
     LaunchedEffect(uid) {
+        // TODO: Implementar getUserProfile en ProfileRepository con Supabase
         runCatching {
-            val snap = db.collection("users").document(uid).get().await()
-            bio = snap.getString("bio") ?: ""
-            if (name.isBlank()) name = snap.getString("displayName") ?: name
+            // val snap = db.collection("users").document(uid).get().await()
+            // bio = snap.getString("bio") ?: ""
+            Log.d(TAG, "Cargando perfil de $uid")
             snap.getString("photoUrl")?.let { photoUrl = it }
         }
     }
@@ -110,17 +114,22 @@ fun ProfileScreen(
             Spacer(Modifier.height(12.dp))
             Button(enabled = !busy, onClick = {
                 scope.launch {
+                    // TODO: Implementar updateProfile en ProfileRepository con Supabase
                     runCatching {
-                        val doc = db.collection("users").document(uid)
-                        val data = mutableMapOf<String, Any>(
-                            "displayName" to name,
-                            "bio" to bio,
-                            "lastSeen" to FieldValue.serverTimestamp()
-                        )
-                        photoUrl?.let { data["photoUrl"] = it }
-                        doc.update(data).await()
+                        // val doc = db.collection("users").document(uid)
+                        // val data = mutableMapOf<String, Any>(
+                        //     "displayName" to name,
+                        //     "bio" to bio,
+                        //     "lastSeen" to FieldValue.serverTimestamp()
+                        // )
+                        // photoUrl?.let { data["photoUrl"] = it }
+                        // doc.update(data).await()
+                        profileRepo.updateProfile(name, bio)
                     }.onSuccess { msg = "Salvo!" }
-                        .onFailure { msg = it.message }
+                        .onFailure { 
+                            msg = it.message
+                            Log.e(TAG, "Error al guardar perfil", it)
+                        }
                 }
             }) { Text("Salvar") }
 
@@ -129,7 +138,8 @@ fun ProfileScreen(
                 enabled = !busy,
                 onClick = {
                     scope.launch {
-                        runCatching { repo.signOutAndRemoveToken() }
+                        // ✅ CORREGIDO: signOut en lugar de signOutAndRemoveToken
+                        runCatching { repo.signOut() }
                         onLoggedOut()
                     }
                 }

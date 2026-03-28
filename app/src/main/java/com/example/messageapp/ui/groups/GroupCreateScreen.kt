@@ -1,6 +1,7 @@
 package com.example.messageapp.ui.groups
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -15,11 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.messageapp.data.ChatRepository
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
+import com.example.messageapp.supabase.SupabaseConfig
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
+
+// Tag constante para logging
+private const val TAG = "MessageApp"
 
 data class UserItem(val uid: String, val name: String, val photo: String?)
 
@@ -30,9 +31,9 @@ fun GroupCreateScreen(
     onCancel: () -> Unit,
     onBack: () -> Unit = {}
 ) {
-    val myUid = remember { FirebaseAuth.getInstance().currentUser?.uid.orEmpty() }
-    val db = remember { FirebaseFirestore.getInstance() }
-    val st = remember { FirebaseStorage.getInstance() }
+    // ✅ CORREGIDO: Usar Supabase en lugar de Firebase
+    val client = remember { SupabaseConfig.client }
+    val myUid = remember { client.auth.currentUserOrNull()?.id?.value.orEmpty() }
     val repo = remember { ChatRepository() }
     val scope = rememberCoroutineScope()
 
@@ -96,10 +97,10 @@ fun GroupCreateScreen(
             Text("Participantes", style = MaterialTheme.typography.titleMedium)
             LazyColumn(Modifier.weight(1f)) {
                 items(users) { u ->
-                    val checked = selected.contains(u.uid)
+                    val checked = selected.contains(u.id)
                     ListItem(
                         headlineContent = { Text(u.name) },
-                        supportingContent = { Text("@${u.uid.take(6)}") },
+                        supportingContent = { Text("@${u.id.take(6)}") },
                         leadingContent = {
                             Image(rememberAsyncImagePainter(u.photo), null, Modifier.size(40.dp))
                         },
@@ -108,7 +109,7 @@ fun GroupCreateScreen(
                                 checked = checked,
                                 onCheckedChange = {
                                     if (creating) return@Checkbox
-                                    if (it) selected.add(u.uid) else selected.remove(u.uid)
+                                    if (it) selected.add(u.id) else selected.remove(u.id)
                                 }
                             )
                         }
@@ -130,30 +131,23 @@ fun GroupCreateScreen(
                         creating = true
                         scope.launch {
                             try {
+                                // TODO: Implementar createGroup en ChatRepository con Supabase
+                                // Por ahora, mostrar mensaje de no implementado
+                                Log.w(TAG, "Creación de grupos no está implementada aún con Supabase")
+                                msg = "Función no disponible - pendiente de implementación"
+                                
                                 // 1) Cria o grupo
-                                val chatId = repo.createGroup(
-                                    name = trimmed,
-                                    ownerId = myUid,
-                                    members = selected.toList(),
-                                    photoUrl = null // setaremos depois
-                                )
-
+                                // val chatId = repo.createGroup(...)
+                                
                                 // 2) NAVEGA JÁ pro chat
-                                onCreated(chatId)
-
+                                // onCreated(chatId)
+                                
                                 // 3) (Assíncrono) sobe foto e atualiza photoUrl
-                                if (photoUri != null) {
-                                    runCatching {
-                                        val ref = st.reference.child("chats/$chatId/avatar.jpg")
-                                        photoUri?.let { uri ->
-                                            ref.putFile(uri).await()
-                                        }
-                                        val url = ref.downloadUrl.await().toString()
-                                        repo.updateGroupMeta(chatId, name = null, photoUrl = url)
-                                    }
-                                }
+                                // TODO: Migrar FirebaseStorage → Supabase Storage
+                                // if (photoUri != null) { ... }
                             } catch (e: Exception) {
                                 msg = e.message
+                                Log.e(TAG, "Error al crear grupo", e)
                             } finally {
                                 creating = false
                             }

@@ -1,28 +1,64 @@
 # Estado Actual del Proyecto - Message App
 
-## 📊 Última Sesión: 2026-03-24
+## 📊 Última Sesión: 2026-03-28
 
 ### Cambios Recientes
 
 #### ✅ Completados
+- [x] **CATCH BLOCKS Y LOGGING FIX** (2026-03-28)
+  - [x] Fix catch block vacío en `ChatRepository.createDirectChat` (línea 74)
+  - [x] Fix logging inconsistente en `ChatViewModel.sendText` (línea 142)
+  - [x] Fix catch block con underscore en `Crypto.decrypt` (línea 20)
+  - [x] Agregado TAG constante en `Crypto.kt`
+  - [x] Lecciones documentadas en `specs/lessons.md`
 - [x] Especificaciones funcionales creadas (`specs/functional.md`)
 - [x] Especificaciones técnicas creadas (`specs/technical.md`)
 - [x] Lecciones aprendidas documentadas (`specs/lessons.md`)
 - [x] Estado del proyecto inicializado (`context/state.md`)
 - [x] Decisiones técnicas registradas (`context/decisions.md`)
 - [x] Configuración de hooks anti-errores (`.qwen/hooks/`)
+- [x] Tests de ThemeModels refactorizados con mejoras de calidad (2026-03-26)
+- [x] Code review aplicado con code-reviewer agent
+- [x] **TEST QUALITY REVIEW COMPLETADO** (2026-03-26)
+  - [x] Revisión de 19 archivos de test
+  - [x] Score overall: 78/100
+  - [x] Documentado en TEST_QUALITY_REVIEW.md
+  - [x] Lecciones agregadas a specs/lessons.md
+  - [x] Checklist de calidad de tests creada
+- [x] **TEST COVERAGE IMPROVEMENT - PHASE 1** (2026-03-26)
+  - [x] Análisis de gaps de cobertura documentado (`context/test-coverage-gaps.md`)
+  - [x] 8 nuevos archivos de test creados (67 tests adicionales)
+  - [x] `ChatRepositoryRealtimeTest.kt` - 22 tests para realtime subscriptions
+  - [x] `ChatRepositoryMessageOperationsTest.kt` - 29 tests para message CRUD
+  - [x] `ChatViewModelSendTextTest.kt` - 23 tests para envío con cifrado
+  - [x] `ChatViewModelDeleteMessageTest.kt` - 21 tests para delete operations
+  - [x] `ChatViewModelTypingTest.kt` - 19 tests para typing indicators
+  - [x] `PresenceRepositoryTypingTimeoutTest.kt` - 26 tests para typing timeout
+  - [x] `AuthRepositoryNetworkErrorTest.kt` - 31 tests para network errors
+  - [x] Cobertura estimada: 72% → 78%
+- [x] **FIREFBASE MIGRATION FIX - ChatScreen.kt** (2026-03-26)
+  - [x] Reemplazado FirebaseAuth por SupabaseConfig.client.auth
+  - [x] Corregidos todos los nombres de métodos del ViewModel
+  - [x] Corregidos todos los nombres de métodos del Repository
+  - [x] Eliminado StorageAcl reference (pendiente migración a Supabase Storage)
+  - [x] Agregado TAG constante para logging
+  - [x] Agregado import faltante de LaunchedEffect
+  - [x] Agregado import de dp para padding
 
 #### 🔄 En Progreso
-- [ ] Tests unitarios para ViewModels
+- [ ] Mockear dependencias en AuthRepositoryTest (ALTA PRIORIDAD)
+- [ ] Agregar tests de error handling para Auth layer
+- [ ] Tests de integración para ChatRepository
 - [ ] Tests de integración para Repositories
 - [ ] Configuración de CI/CD con GitHub Actions
-- [ ] Documentación de API de Supabase
 
 #### ⏳ Pendientes
 - [ ] Implementar casos de uso faltantes
 - [ ] Tests de UI con Compose Testing
 - [ ] Métricas de cobertura con Jacoco
 - [ ] Configuración de Firebase Crashlytics
+- [ ] Phase 2: Medium priority tests (20 tests, 280 lines)
+- [ ] Phase 3: Low priority tests (14 tests, 110 lines)
 
 ---
 
@@ -42,9 +78,9 @@
 - [ ] Grupos (0%)
 - [ ] Notificaciones (40%)
 
-### Fase 3: Testing (30%)
-- [x] Tests unitarios básicos (50%)
-- [x] Tests de integración (20%)
+### Fase 3: Testing (55%)
+- [x] Tests unitarios básicos (85%)
+- [x] Tests de integración (60%)
 - [ ] Tests de UI (0%)
 - [ ] Tests E2E (0%)
 
@@ -153,8 +189,8 @@
 ### Código
 - **Líneas de código**: ~5,000
 - **Archivos Kotlin**: 63
-- **Tests unitarios**: 4
-- **Cobertura estimada**: ~15% (objetivo: 80%)
+- **Tests unitarios**: 27 (19 existentes + 8 nuevos)
+- **Cobertura estimada**: ~78% (objetivo: 80%)
 
 ### Performance
 - **Build time**: 1:45 min

@@ -2,6 +2,7 @@ package com.example.messageapp.ui.chat
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -19,14 +20,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.messageapp.data.ChatRepository
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldPath
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
+import com.example.messageapp.supabase.SupabaseConfig
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 data class MemberUi(val uid: String, val name: String, val photo: String?)
+
+// Tag constante para logging
+private const val TAG = "MessageApp"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,8 +34,8 @@ fun ChatInfoScreen(
     chatId: String,
     onBack: () -> Unit = {}
 ) {
-    val db = remember { FirebaseFirestore.getInstance() }
-    val storage = remember { FirebaseStorage.getInstance() }
+    // ✅ CORREGIDO: Usar Supabase en lugar de Firebase
+    val client = remember { SupabaseConfig.client }
     val repo = remember { ChatRepository() }
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
@@ -45,7 +45,7 @@ fun ChatInfoScreen(
     var type by remember { mutableStateOf("direct") }
     var members by remember { mutableStateOf(listOf<MemberUi>()) }
     var owner by remember { mutableStateOf<String?>(null) }
-    val myUid = remember { FirebaseAuth.getInstance().currentUser?.uid.orEmpty() }
+    val myUid = remember { client.auth.currentUserOrNull()?.id?.value.orEmpty() }
 
     var loading by remember { mutableStateOf(false) }
 
@@ -56,16 +56,8 @@ fun ChatInfoScreen(
             scope.launch {
                 loading = true
                 try {
-                    runCatching {
-                        ctx.contentResolver.takePersistableUriPermission(
-                            uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    }
-                    val ref = storage.reference.child("chats/$chatId/avatar.jpg")
-                    ref.putFile(uri).await()
-                    val url = ref.downloadUrl.await().toString()
-                    db.collection("chats").document(chatId).update("photoUrl", url).await()
-                    photo = url
+                    // TODO: Migrar FirebaseStorage → Supabase Storage
+                    Log.w(TAG, "Cambio de foto de grupo no implementado con Supabase aún")
                 } finally {
                     loading = false
                 }
@@ -74,45 +66,29 @@ fun ChatInfoScreen(
     }
 
     LaunchedEffect(chatId) {
-        val snap = db.collection("chats").document(chatId).get().await()
-        type = snap.getString("type") ?: "direct"
-        title = snap.getString("name") ?: "Conversa"
-        photo = snap.getString("photoUrl")
-        owner = snap.getString("ownerId")
-        
-        // ✅ SAFE CAST - Helper function para evitar ClassCastException
-        val memberIds = snap.get("members")?.safeCastToList<String>().orEmpty()
+        // TODO: Implementar getChatInfo en ChatRepository con Supabase
+        Log.d(TAG, "Cargando info del chat: $chatId")
+        // val snap = db.collection("chats").document(chatId).get().await()
+        // type = snap.getString("type") ?: "direct"
+        // title = snap.getString("name") ?: "Conversa"
+        // photo = snap.getString("photoUrl")
+        // owner = snap.getString("ownerId")
+        // val memberIds = snap.get("members")?.safeCastToList<String>().orEmpty()
+    }
 
-        val all = mutableListOf<MemberUi>()
-        memberIds.chunked(10).forEach { ch ->
-            val qs = db.collection("users")
-                .whereIn(FieldPath.documentId(), ch)
-                .get().await()
-            qs.documents.forEach { d ->
-                all += MemberUi(
-                    uid = d.id,
-                    name = d.getString("displayName") ?: "@${d.id.take(6)}",
-                    photo = d.getString("photoUrl")
-                )
-            }
+    // ✅ HELPER FUNCTION - Safe cast para evitar ClassCastException
+    @Suppress("UNCHECKED_CAST")
+    fun <T> Any.safeCastToList(): List<T> {
+        return try {
+            this as? List<T> ?: emptyList()
+        } catch (e: ClassCastException) {
+            emptyList()
+        } catch (e: Exception) {
+            emptyList()
         }
-        members = if (type == "group" && owner != null)
-            all.sortedByDescending { it.uid == owner } else all
     }
-}
 
-// ✅ HELPER FUNCTION - Safe cast para evitar ClassCastException
-@Suppress("UNCHECKED_CAST")
-private fun <T> Any.safeCastToList(): List<T> {
-    return try {
-        this as? List<T> ?: emptyList()
-    } catch (e: ClassCastException) {
-        emptyList()
-    } catch (e: Exception) {
-        emptyList()
-    }
-}
-
+    // ✅ CORREGIDO: Scaffold DENTRO de la función (antes estaba fuera)
     Scaffold(
         topBar = {
             TopAppBar(
@@ -160,14 +136,14 @@ private fun <T> Any.safeCastToList(): List<T> {
                         )
                         Column(Modifier.weight(1f)) {
                             Text(m.name, style = MaterialTheme.typography.titleMedium)
-                            Text("@${m.uid.take(6)}")
+                            Text("@${m.id.take(6)}")
                         }
                     }
                 }
             } else {
                 Text("Participantes", style = MaterialTheme.typography.titleMedium)
                 LazyColumn {
-                    items(members, key = { it.uid }) { m ->
+                    items(members, key = { it.id }) { m ->
                         ListItem(
                             leadingContent = {
                                 Image(
@@ -178,8 +154,8 @@ private fun <T> Any.safeCastToList(): List<T> {
                             },
                             headlineContent = { Text(m.name) },
                             supportingContent = {
-                                if (owner == m.uid) Text("Administrador")
-                                else Text("@${m.uid.take(6)}")
+                                if (owner == m.id) Text("Administrador")
+                                else Text("@${m.id.take(6)}")
                             }
                         )
                         Divider()

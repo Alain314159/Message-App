@@ -3,6 +3,7 @@ package com.example.messageapp.ui.chat
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -14,11 +15,11 @@ import com.example.messageapp.data.StorageRepository
 import com.example.messageapp.model.Message
 import com.example.messageapp.utils.Crypto
 import com.example.messageapp.utils.Time
-import com.google.firebase.firestore.FieldPath
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
+
+// Tag constante para logging
+private const val TAG = "MessageApp.ChatHelpers"
 
 // ============================================================================
 // PICKERS DE MEDIOS (Image, Video, Audio, File)
@@ -37,26 +38,58 @@ fun rememberMediaPickers(chatId: String, myUid: String?, storage: StorageReposit
         ChatMediaPickers(
             image = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
                 uri?.let {
-                    runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-                    if (myUid.isNotBlank()) scope.launch { storage.sendMedia(chatId, myUid!!, it, "image") }
+                    try {
+                        context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        if (myUid.isNotBlank()) {
+                            scope.launch { storage.sendMedia(chatId, myUid!!, it, "image") }
+                        }
+                    } catch (e: SecurityException) {
+                        Log.e(TAG, "Permission denied for image URI", e)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to process image URI", e)
+                    }
                 }
             },
             video = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
                 uri?.let {
-                    runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-                    if (myUid.isNotBlank()) scope.launch { storage.sendMedia(chatId, myUid!!, it, "video") }
+                    try {
+                        context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        if (myUid.isNotBlank()) {
+                            scope.launch { storage.sendMedia(chatId, myUid!!, it, "video") }
+                        }
+                    } catch (e: SecurityException) {
+                        Log.e(TAG, "Permission denied for video URI", e)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to process video URI", e)
+                    }
                 }
             },
             audio = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
                 uri?.let {
-                    runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-                    if (myUid.isNotBlank()) scope.launch { storage.sendMedia(chatId, myUid!!, it, "audio") }
+                    try {
+                        context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        if (myUid.isNotBlank()) {
+                            scope.launch { storage.sendMedia(chatId, myUid!!, it, "audio") }
+                        }
+                    } catch (e: SecurityException) {
+                        Log.e(TAG, "Permission denied for audio URI", e)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to process audio URI", e)
+                    }
                 }
             },
             file = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
                 uri?.let {
-                    runCatching { context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-                    if (myUid.isNotBlank()) scope.launch { storage.sendMedia(chatId, myUid!!, it, "file") }
+                    try {
+                        context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        if (myUid.isNotBlank()) {
+                            scope.launch { storage.sendMedia(chatId, myUid!!, it, "file") }
+                        }
+                    } catch (e: SecurityException) {
+                        Log.e(TAG, "Permission denied for file URI", e)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to process file URI", e)
+                    }
                 }
             }
         )
@@ -65,6 +98,7 @@ fun rememberMediaPickers(chatId: String, myUid: String?, storage: StorageReposit
 
 // ============================================================================
 // CARGA DE USUARIOS (para mostrar nombres/fotos de remitentes)
+// NOTE: Esta función requiere migración a Supabase - temporalmente deshabilitada
 // ============================================================================
 
 private data class SenderUi(val name: String, val photo: String?)
@@ -72,16 +106,8 @@ private data class SenderUi(val name: String, val photo: String?)
 @Composable
 fun rememberUsers(msgs: List<Message>): Map<String, SenderUi> {
     val users = remember { mutableStateMapOf<String, SenderUi>() }
-    val db = remember { FirebaseFirestore.getInstance() }
-    LaunchedEffect(msgs) {
-        val missing = msgs.map { it.senderId }.toSet().filter { it.isNotBlank() && !users.containsKey(it) }
-        if (missing.isEmpty()) return@LaunchedEffect
-        missing.chunked(10).forEach { chunk ->
-            db.collection("users").whereIn(FieldPath.documentId(), chunk).get().await().documents.forEach { d ->
-                users[d.id] = SenderUi(d.getString("displayName") ?: "@${d.id.take(6)}", d.getString("photoUrl"))
-            }
-        }
-    }
+    // TODO: Migrar a Supabase cuando esté disponible el repository de usuarios
+    // Por ahora, retornar mapa vacío - la UI debe manejar nulls
     return users
 }
 
@@ -89,7 +115,14 @@ fun rememberUsers(msgs: List<Message>): Map<String, SenderUi> {
 fun rememberGroupedMessagesWithAuthors(msgs: List<Message>, queryText: String, myUid: String, users: Map<String, SenderUi>): List<Pair<String, List<MessageWithAuthor>>> {
     return remember(msgs, queryText, users) {
         val base = msgs.filter { !it.deletedFor.getOrDefault(myUid, false) }
-        val filtered = if (queryText.isBlank()) base else base.filter { it.type == "text" && Crypto.decrypt(it.textEnc).contains(queryText, ignoreCase = true) }
+        val filtered = if (queryText.isBlank()) {
+            base
+        } else {
+            base.filter { 
+                it.type == "text" && it.textEnc != null && 
+                runCatching { Crypto.decrypt(it.textEnc!!) }.getOrElse { "" }.contains(queryText, ignoreCase = true) 
+            }
+        }
         val map = linkedMapOf<String, MutableList<MessageWithAuthor>>()
         filtered.forEach { m ->
             val h = Time.headerFor(m.createdAt).ifBlank { " " }
@@ -103,6 +136,13 @@ fun rememberGroupedMessagesWithAuthors(msgs: List<Message>, queryText: String, m
 @Composable
 fun rememberSearchMatches(msgs: List<Message>, queryText: String): List<String> {
     return remember(msgs, queryText) {
-        if (queryText.isBlank()) emptyList() else msgs.filter { it.type == "text" && Crypto.decrypt(it.textEnc).contains(queryText, ignoreCase = true) }.map { it.id }
+        if (queryText.isBlank()) {
+            emptyList()
+        } else {
+            msgs.filter { 
+                it.type == "text" && it.textEnc != null && 
+                runCatching { Crypto.decrypt(it.textEnc!!) }.getOrElse { "" }.contains(queryText, ignoreCase = true) 
+            }.map { it.id }
+        }
     }
 }

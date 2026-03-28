@@ -2,6 +2,7 @@ package com.example.messageapp.ui.chat
 
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,6 +30,26 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.messageapp.model.Message
+import com.example.messageapp.model.MessageStatus
+import com.example.messageapp.ui.theme.GrisKoala
+import com.example.messageapp.ui.theme.RosaChanchita
+
+// Tag constante para logging
+private const val TAG = "MessageApp.ChatComponents"
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -83,7 +105,16 @@ fun MessageMediaContent(m: Message) {
             } else { Text("[imagen]", color = MaterialTheme.colorScheme.onSurface) }
         }
         "video", "audio", "file" -> {
-            TextButton(onClick = { runCatching { val intent = Intent(Intent.ACTION_VIEW, Uri.parse(m.mediaUrl)); ctx.startActivity(intent) } }) {
+            TextButton(onClick = {
+                try {
+                    if (!m.mediaUrl.isNullOrBlank()) {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(m.mediaUrl))
+                        ctx.startActivity(intent)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to open media: ${m.type}", e)
+                }
+            }) {
                 Icon(imageVector = when (m.type) { "video" -> Icons.Outlined.VideoFile; "audio" -> Icons.Outlined.Mic; else -> Icons.Outlined.AttachFile }, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Abrir ${m.type}")
@@ -122,8 +153,9 @@ fun buildHighlighted(text: String, query: String): AnnotatedString {
 
 @Composable
 fun DeliveryTicks(m: Message) {
-    val delivered = m.deliveredTo.isNotEmpty()
-    val read = m.readBy.isNotEmpty()
+    // ✅ CORREGIDO: deliveredAt y readAt son Long? (timestamp), no listas
+    val delivered = m.deliveredAt != null
+    val read = m.readAt != null
     val hasTicks = delivered || read
     if (hasTicks) {
         val status = when {

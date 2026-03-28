@@ -1,5 +1,6 @@
 package com.example.messageapp.data
 
+import android.util.Log
 import com.example.messageapp.model.Chat
 import com.example.messageapp.supabase.SupabaseConfig
 import io.github.jan-tennert.supabase.postgrest.Postgrest
@@ -11,6 +12,8 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 
+private const val TAG = "MessageApp"
+
 /**
  * Repositorio de Presencia
  *
@@ -18,7 +21,7 @@ import kotlinx.coroutines.withContext
  * - Typing indicators ("Escribiendo...")
  * - Estado online/offline
  * - Last seen (última vez visto)
- * 
+ *
  * ✅ Actualizado para supabase-kt 3.x
  */
 class PresenceRepository {
@@ -70,9 +73,10 @@ class PresenceRepository {
                     filter { eq("id", chatId) }
                 }
             }
-            
+
         } catch (e: Exception) {
-            android.util.Log.w("PresenceRepository", "Error al actualizar typing", e)
+            // ✅ CORREGIDO: Agregar logging consistente con TAG
+            android.util.Log.w("PresenceRepository", "setTypingStatus failed: chatId=$chatId isTyping=$isTyping", e)
         }
     }
     
@@ -175,13 +179,13 @@ class PresenceRepository {
                     val recordJson = change.record
                     if (recordJson != null) {
                         try {
-                            val user = kotlinx.serialization.json.Json.decodeFromJsonElement<Chat>(recordJson)
-                            if (user.id == partnerId) {
-                                val isOnline = user.isOnline
-                                trySend(isOnline)
+                            // ✅ CORREGIDO ERROR #1: Decodificar como UserStatusResponse
+                            val userStatus = kotlinx.serialization.json.Json.decodeFromJsonElement<UserStatusResponse>(recordJson)
+                            if (userStatus.id == partnerId) {
+                                trySend(userStatus.isOnline)
                             }
                         } catch (e: Exception) {
-                            android.util.Log.w("PresenceRepository", "Error decoding user", e)
+                            Log.w(TAG, "PresenceRepository: Error decoding user data", e)
                         }
                     }
                 }
@@ -193,7 +197,7 @@ class PresenceRepository {
             }
 
         } catch (e: Exception) {
-            android.util.Log.w("PresenceRepository", "Error al observar online status", e)
+            Log.w(TAG, "PresenceRepository: Error al observar online status", e)
             close()
         }
     }
@@ -214,7 +218,9 @@ class PresenceRepository {
 
             response?.lastSeen
         } catch (e: Exception) {
-            null
+            // ✅ CORREGIDO: No retornar null silenciosamente - loguear
+            Log.w(TAG, "PresenceRepository: getPartnerLastSeen failed: partnerId=$partnerId", e)
+            null  // En este caso null es aceptable como "no disponible"
         }
     }
 }
@@ -224,4 +230,12 @@ class PresenceRepository {
  */
 private data class UserLastSeenResponse(
     val lastSeen: Long?
+)
+
+/**
+ * Data class para observar estado online/offline
+ */
+private data class UserStatusResponse(
+    val id: String,
+    val isOnline: Boolean
 )

@@ -1,5 +1,6 @@
 package com.example.messageapp.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.messageapp.data.ChatRepository
@@ -138,7 +139,7 @@ class ChatViewModel(
                 )
             } catch (e: Exception) {
                 _error.value = "Error al enviar mensaje: ${e.message}"
-                android.util.Log.w("ChatViewModel", "Send message failed", e)
+                Log.w(TAG, "ChatViewModel: Send message failed", e)
             }
         }
     }
@@ -148,6 +149,7 @@ class ChatViewModel(
      * Debe llamarse en la UI para mostrar el mensaje
      *
      * ✅ CORREGIDO ERR-002: Maneja nulls correctamente
+     * ✅ CORREGIDO ERROR #5: Validación de currentChatId mejorada con logging
      */
     fun decryptMessage(message: Message): String {
         // ✅ Validar tipo primero
@@ -164,8 +166,13 @@ class ChatViewModel(
         if (message.nonce.isNullOrBlank()) {
             return "[Error: Clave de cifrado faltante]"
         }
-        
-        val chatId = currentChatId ?: return "[Error: Chat no disponible]"
+
+        // ✅ CORREGIDO ERROR #5: Validar currentChatId con logging
+        val chatId = currentChatId
+        if (chatId.isNullOrBlank()) {
+            Log.w(TAG, "ChatViewModel: decryptMessage llamado pero currentChatId es null")
+            return "[Error: Chat no disponible - intente reiniciar la conversación]"
+        }
 
         try {
             // Reconstruir mensaje cifrado (formato: iv:ciphertext)
@@ -175,7 +182,7 @@ class ChatViewModel(
             return E2ECipher.decrypt(encrypted, chatId)
 
         } catch (e: Exception) {
-            android.util.Log.w(TAG, "Decrypt failed", e)
+            Log.e(TAG, "ChatViewModel: Decrypt failed para mensaje ${message.id}", e)
             return "[Error: No se pudo descifrar]"
         }
     }
@@ -188,7 +195,10 @@ class ChatViewModel(
             try {
                 repo.markAsRead(chatId, myUid)
             } catch (e: Exception) {
-                // Ignorar errores silenciosamente
+                // Log error for debugging (non-critical operation, but track for diagnostics)
+                android.util.Log.w(TAG, "Mark as read failed: $chatId", e)
+                // Optionally update UI state to indicate sync issue
+                _error.value = "No se pudo marcar como leído"
             }
         }
     }

@@ -48,9 +48,15 @@ data class Chat(
 ) {
     /**
      * Verifica si un usuario específico está escribiendo
+     * 
+     * ✅ CORREGIDO ERROR #57: Maneja caso donde userId no está en el chat
      */
     fun isUserTyping(userId: String): Boolean {
         val index = memberIds.indexOf(userId)
-        return if (index == 0) user1Typing else if (index == 1) user2Typing else false
+        return when (index) {
+            0 -> user1Typing
+            1 -> user2Typing
+            else -> throw IllegalStateException("User $userId no está en el chat (memberIds: $memberIds)")
+        }
     }
 }

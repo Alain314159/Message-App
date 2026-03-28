@@ -104,3 +104,4 @@ onesignal_config.env
 **/SupabaseConfig.kt
 **/local.properties
 **/secrets.properties
+**/gradle.properties

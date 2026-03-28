@@ -1,6 +1,7 @@
 package com.example.messageapp.ui.auth
 
 import android.app.Activity
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AlternateEmail
@@ -14,6 +15,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.messageapp.data.AuthRepository
 import kotlinx.coroutines.launch
+
+// Tag constante para logging
+private const val TAG = "MessageApp"
 
 @Composable
 fun AuthScreen(
@@ -34,13 +38,14 @@ fun AuthScreen(
 
         TabRow(selectedTabIndex = tab) {
             Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Email") })
-            Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Telefone") })
+            // Tab deshabilitado hasta implementar phone auth con Supabase
+            // Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Telefone") })
         }
         Spacer(Modifier.height(12.dp))
 
         when (tab) {
             0 -> EmailAuthSection(repo, onLogged)
-            else -> PhoneAuthSection(repo, act, onLogged)
+            // else -> PhoneAuthSection(repo, act, onLogged)  // Pendiente de implementación
         }
     }
 }
@@ -86,10 +91,14 @@ private fun EmailAuthSection(
             onClick = {
                 scope.launch {
                     runCatching {
-                        if (mode == 0) repo.signInEmail(email, pass)
-                        else repo.signUpEmail(email, pass)
+                        // ✅ CORREGIDO: Nombres correctos de métodos
+                        if (mode == 0) repo.signInWithEmail(email, pass)
+                        else repo.signUpWithEmail(email, pass)
                     }.onSuccess { onLogged() }
-                        .onFailure { msg = it.message }
+                        .onFailure { 
+                            msg = it.message
+                            Log.e(TAG, "Auth failed: ${it.message}", it)
+                        }
                 }
             }
         ) { Text(if (mode == 0) "Entrar" else "Criar conta") }
@@ -97,9 +106,9 @@ private fun EmailAuthSection(
         TextButton(onClick = {
             if (email.isNotBlank()) {
                 scope.launch {
-                    runCatching { repo.sendPasswordReset(email) }
-                        .onSuccess { msg = "Enviamos um email de recuperação." }
-                        .onFailure { msg = it.message }
+                    // TODO: Implementar sendPasswordReset en AuthRepository
+                    Log.w(TAG, "Password reset no está implementado aún")
+                    msg = "Función no disponible"
                 }
             } else msg = "Preencha o email."
         }) { Text("Esqueci minha senha") }
@@ -108,7 +117,17 @@ private fun EmailAuthSection(
     }
 }
 
-
+// ============================================================================
+// PHONE AUTH SECTION - COMENTADO HASTA IMPLEMENTACIÓN CON SUPABASE
+// ============================================================================
+// Los siguientes métodos de AuthRepository no existen:
+// - phoneVerifyCallbacks()
+// - startPhoneVerification()
+// - signInWithPhoneCredential()
+// - upsertUserProfile()
+// - saveFcmTokenInBackground()
+// ============================================================================
+/*
 @Composable
 private fun PhoneAuthSection(
     repo: AuthRepository,
@@ -133,21 +152,9 @@ private fun PhoneAuthSection(
             )
 
             Button(onClick = {
-                val cb = repo.phoneVerifyCallbacks(
-                    onCodeSent = { v -> vid = v },
-                    onInstantSuccess = {
-                        scope.launch {
-                            repo.upsertUserProfile()
-                            repo.saveFcmTokenInBackground()
-                            onLogged()
-                        }
-                    },
-                    onError = { e ->
-                        // ✅ Usar manejo de errores estándar de Kotlin/Supabase
-                        msg = e.message ?: "Error de autenticación"
-                    }
-                )
-                repo.startPhoneVerification(activity, phone, cb)
+                // TODO: Implementar phone auth con Supabase
+                Log.w(TAG, "Phone auth no está implementado aún")
+                msg = "Phone auth no disponible"
             }) { Text("Enviar código") }
 
         } else {
@@ -159,14 +166,9 @@ private fun PhoneAuthSection(
             )
 
             Button(onClick = {
-                scope.launch {
-                    runCatching { repo.signInWithPhoneCredential(vid ?: return@runCatching, code) }
-                        .onSuccess { onLogged() }
-                        .onFailure {
-                            // ✅ Usar manejo de errores estándar
-                            msg = it.message ?: "Error al confirmar"
-                        }
-                }
+                // TODO: Implementar phone auth con Supabase
+                Log.w(TAG, "Phone auth no está implementado aún")
+                msg = "Phone auth no disponible"
             }) { Text("Confirmar") }
         }
 
