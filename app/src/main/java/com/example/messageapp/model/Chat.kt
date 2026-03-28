@@ -67,7 +67,7 @@ data class Chat(
         return when (index) {
             0 -> user1Typing
             1 -> user2Typing
-            else -> throw IllegalStateException("User $userId no está en el chat (memberIds: $memberIds)")
+            else -> error("User $userId no está en el chat (memberIds: $memberIds)")
         }
     }
 }

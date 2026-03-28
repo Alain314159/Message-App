@@ -80,7 +80,7 @@ object E2ECipher {
             val iv = cipher.iv
             if (iv.size != IV_SIZE) {
                 Log.e(TAG, "E2ECipher: IV tamaño incorrecto: ${iv.size}")
-                throw IllegalStateException("IV tamaño incorrecto: ${iv.size}")
+                error("IV tamaño incorrecto: ${iv.size}")
             }
 
             // Codificar en Base64

@@ -153,7 +153,7 @@ class AuthRepository {
             }
 
             val uid = auth.currentSessionOrNull()?.user?.id
-                ?: throw IllegalStateException("User ID not found after login")
+                ?: error("User ID not found after login")
 
             // Verificar/actualizar perfil
             upsertUserProfile(uid)
@@ -187,7 +187,7 @@ class AuthRepository {
                 password = tempPassword
             }
 
-            val uid = authResult.user?.id ?: throw IllegalStateException("User ID is null after anonymous sign up")
+            val uid = authResult.user?.id ?: error("User ID is null after anonymous sign up")
 
             // Crear perfil anónimo
             db.from("users").insert(
@@ -394,7 +394,7 @@ class AuthRepository {
                 }
 
                 val uid = auth.currentSessionOrNull()?.user?.id
-                    ?: throw IllegalStateException("User ID not found after Google login")
+                    ?: error("User ID not found after Google login")
 
                 // Crear/actualizar perfil
                 upsertUserProfile(uid)
