@@ -137,8 +137,7 @@ class PairingRepository {
      */
     suspend fun requestPairing(partnerId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            // TODO: Implementar con Edge Function de Supabase o JPush
-            // Por ahora es un stub que retorna éxito
+            // Note: requestPairing es stub - pendiente de implementar con Edge Function de Supabase o JPush
             Log.w("PairingRepository", "sendPairingNotification: No implementado")
             // Por ahora solo retornamos éxito
             Result.success(Unit)

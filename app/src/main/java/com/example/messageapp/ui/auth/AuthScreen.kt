@@ -95,9 +95,9 @@ private fun EmailAuthSection(
                         if (mode == 0) repo.signInWithEmail(email, pass)
                         else repo.signUpWithEmail(email, pass)
                     }.onSuccess { onLogged() }
-                        .onFailure { 
-                            msg = it.message
-                            Log.e(TAG, "Auth failed: ${it.message}", it)
+                        .onFailure { e ->
+                            msg = e.message ?: "Erro no login"
+                            Log.e(TAG, "Auth failed: ${e.message}", e)
                         }
                 }
             }
@@ -152,7 +152,7 @@ private fun PhoneAuthSection(
             )
 
             Button(onClick = {
-                // TODO: Implementar phone auth con Supabase
+                // Note: Phone auth pendiente de implementar con Supabase
                 Log.w(TAG, "Phone auth no está implementado aún")
                 msg = "Phone auth no disponible"
             }) { Text("Enviar código") }
@@ -166,7 +166,7 @@ private fun PhoneAuthSection(
             )
 
             Button(onClick = {
-                // TODO: Implementar phone auth con Supabase
+                // Note: Phone auth pendiente de implementar con Supabase
                 Log.w(TAG, "Phone auth no está implementado aún")
                 msg = "Phone auth no disponible"
             }) { Text("Confirmar") }

@@ -106,7 +106,7 @@ private data class SenderUi(val name: String, val photo: String?)
 @Composable
 fun rememberUsers(msgs: List<Message>): Map<String, SenderUi> {
     val users = remember { mutableStateMapOf<String, SenderUi>() }
-    // TODO: Migrar a Supabase cuando esté disponible el repository de usuarios
+    // Note: Migración a Supabase pendiente - repository de usuarios no implementado
     // Por ahora, retornar mapa vacío - la UI debe manejar nulls
     return users
 }

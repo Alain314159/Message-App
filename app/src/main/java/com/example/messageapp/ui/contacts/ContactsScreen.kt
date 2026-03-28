@@ -104,10 +104,10 @@ fun ContactsScreen(
                                     modifier = Modifier.weight(1f)
                                 )
                                 TextButton(
-                                    onClick = { 
-                                        // TODO: Implementar eliminación de contacto
+                                    onClick = {
+                                        // Note: Eliminación de contacto pendiente de implementar
                                         scope.launch {
-                                            // Implementar lógica de eliminación
+                                            // TODO: Implementar lógica de eliminación cuando exista el método en ContactsRepository
                                         }
                                     }
                                 ) {

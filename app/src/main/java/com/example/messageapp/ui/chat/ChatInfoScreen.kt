@@ -56,7 +56,7 @@ fun ChatInfoScreen(
             scope.launch {
                 loading = true
                 try {
-                    // TODO: Migrar FirebaseStorage → Supabase Storage
+                    // Note: Cambio de foto de grupo pendiente de implementar con Supabase Storage
                     Log.w(TAG, "Cambio de foto de grupo no implementado con Supabase aún")
                 } finally {
                     loading = false
@@ -66,7 +66,7 @@ fun ChatInfoScreen(
     }
 
     LaunchedEffect(chatId) {
-        // TODO: Implementar getChatInfo en ChatRepository con Supabase
+        // Note: getChatInfo pendiente de implementar en ChatRepository con Supabase
         Log.d(TAG, "Cargando info del chat: $chatId")
         // val snap = db.collection("chats").document(chatId).get().await()
         // type = snap.getString("type") ?: "direct"
