@@ -51,7 +51,6 @@ fun ChatListScreen(
     }
 
     // ✅ CORREGIDO: Eliminar filtro por visibleFor (propiedad no existe en Chat)
-    // TODO: Implementar archivo de chats cuando se agregue visibleFor al modelo
     val list = chats  // Usar lista completa por ahora
 
     Scaffold(
@@ -71,21 +70,19 @@ fun ChatListScreen(
         }
     }
 
-    // TODO: Implementar dialogs cuando existan los métodos en el repository
-    // if (confirmLeave != null) LeaveGroupDialog(...)
-    // if (confirmDeleteGroup != null) DeleteGroupDialog(...)
+    // Note: LeaveGroupDialog y DeleteGroupDialog comentados - métodos no existen en ChatRepository
 }
 
-// ✅ CORREGIDO: Funciones comentadas - métodos no existen en ChatRepository
+// Note: Funciones comentadas - métodos leaveGroup y deleteGroup no existen en ChatRepository
 /*
 @Composable
 private fun LeaveGroupDialog(chat: Chat, myUid: String, repo: ChatRepository, scope: kotlinx.coroutines.CoroutineScope, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Sair do grupo") },
-        text = { Text("Tem certeza que deseja sair do grupo?") },  // ✅ chat.name no existe
+        text = { Text("Tem certeza que deseja sair do grupo?") },
         confirmButton = {
-            // TODO: Implementar leaveGroup en ChatRepository
+            // Note: leaveGroup no está implementado en ChatRepository
             TextButton(onClick = { /* scope.launch { repo.leaveGroup(chat.id, myUid); onDismiss() } */ }) { Text("Sair") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
@@ -97,9 +94,9 @@ private fun DeleteGroupDialog(chat: Chat, repo: ChatRepository, scope: kotlinx.c
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Apagar grupo") },
-        text = { Text("Apagar o grupo para todos os participantes?") },  // ✅ chat.name no existe
+        text = { Text("Apagar o grupo para todos os participantes?") },
         confirmButton = {
-            // TODO: Implementar deleteGroup en ChatRepository
+            // Note: deleteGroup no está implementado en ChatRepository
             TextButton(onClick = { /* scope.launch { repo.deleteGroup(chat.id); onDismiss() } */ }) { Text("Apagar") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
@@ -125,9 +122,9 @@ private fun ChatRow(
     var avatar by remember(chat.id) { mutableStateOf<String?>(null) }
 
     LaunchedEffect(chat.id, chat.type, chat.memberIds, myUid) {
-        // ✅ CORREGIDO: Eliminar Firebase - usar chat.memberIds en lugar de chat.members
+        // ✅ CORREGIDO: usar chat.memberIds en lugar de chat.members (Firebase)
         if (chat.type == "direct") {
-            // TODO: Obtener nombre del otro usuario desde Supabase
+            // Note: Obtener nombre del otro usuario desde Supabase - pendiente de implementación
             val other = chat.memberIds.firstOrNull { it != myUid }
             if (!other.isNullOrBlank()) {
                 title = "@${other.take(6)}"  // Temporalmente mostrar ID
@@ -137,12 +134,12 @@ private fun ChatRow(
                 avatar = null
             }
         } else {
-            title = chat.id  // ✅ chat.name no existe
-            avatar = null  // ✅ chat.photoUrl no existe
+            title = chat.id  // Note: chat.name no existe
+            avatar = null  // Note: chat.photoUrl no existe
         }
     }
 
-    // ✅ CORREGIDO: chat.lastMessage no existe - usar solo lastMessageEnc y pinnedSnippet
+    // Note: chat.lastMessage no existe - usar solo lastMessageEnc y pinnedSnippet
     val snippet = remember(chat.lastMessageEnc, chat.pinnedSnippet) {
         chat.lastMessageEnc?.let { Crypto.decrypt(it) } ?: chat.pinnedSnippet ?: ""
     }

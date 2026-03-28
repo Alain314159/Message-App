@@ -187,7 +187,7 @@ class AuthRepository {
                 password = tempPassword
             }
 
-            val uid = authResult.user?.id ?: throw Exception("User ID is null")
+            val uid = authResult.user?.id ?: throw IllegalStateException("User ID is null after anonymous sign up")
 
             // Crear perfil anónimo
             db.from("users").insert(

@@ -50,7 +50,6 @@ class NotificationRepository {
         
         try {
             // Configurar modo debug (solo en desarrollo)
-            // TODO: Remover en producción
             if (BuildConfig.DEBUG) {
                 JPushInterface.setDebugMode(true)
             }
