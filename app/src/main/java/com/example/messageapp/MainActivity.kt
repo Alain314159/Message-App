@@ -42,10 +42,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Inicializar JPush y obtener Registration ID
-        initializeJPush()
-        
+
+        // JPush - COMENTADO TEMPORALMENTE (dependencia no disponible)
+        // initializeJPush()
+
         setContent {
             MaterialTheme {
                 val nav = rememberNavController()
@@ -75,7 +75,7 @@ class MainActivity : ComponentActivity() {
                         val repo = remember { AuthRepository() }
                         AuthScreen(repo = repo) {
                             // Después de login exitoso, actualizar JPush
-                            updateJPushRegistrationId()
+                            // updateJPushRegistrationId() // COMENTADO - JPush no disponible
                             nav.navigate("home") {
                                 popUpTo("auth") { inclusive = true }
                             }
@@ -212,37 +212,35 @@ class MainActivity : ComponentActivity() {
         // Marcar como offline
         authVm.updatePresence(false)
     }
-    
+
     /**
      * Inicializa JPush y registra el Registration ID
+     * COMENTADO TEMPORALMENTE - dependencia no disponible
      */
     private fun initializeJPush() {
-        if (notificationRepo.isJPushAvailable()) {
-            notificationRepo.initialize(this)
-            
-            // Obtener Registration ID y guardar en Supabase
-            updateJPushRegistrationId()
-        }
+        // if (notificationRepo.isJPushAvailable()) {
+        //     notificationRepo.initialize(this)
+        //     updateJPushRegistrationId()
+        // }
     }
-    
+
     /**
      * Actualiza el JPush Registration ID en Supabase
+     * COMENTADO TEMPORALMENTE - dependencia no disponible
      */
     private fun updateJPushRegistrationId() {
-        if (!notificationRepo.isJPushAvailable()) return
-        
-        lifecycleScope.launch {
-            try {
-                val registrationId = notificationRepo.getRegistrationId()
-                if (registrationId.isNotBlank()) {
-                    val authRepo = AuthRepository()
-                    authRepo.updateJPushRegistrationId(registrationId)
-                    android.util.Log.d("MainActivity", "JPush Registration ID actualizado: $registrationId")
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("MainActivity", "Error al actualizar JPush ID", e)
-            }
-        }
+        // if (!notificationRepo.isJPushAvailable()) return
+        // lifecycleScope.launch {
+        //     try {
+        //         val registrationId = notificationRepo.getRegistrationId()
+        //         if (registrationId.isNotBlank()) {
+        //             val authRepo = AuthRepository()
+        //             authRepo.updateJPushRegistrationId(registrationId)
+        //         }
+        //     } catch (e: Exception) {
+        //         android.util.Log.w("MainActivity", "Error al actualizar JPush ID", e)
+        //     }
+        // }
     }
 }
 

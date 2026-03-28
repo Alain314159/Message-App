@@ -165,11 +165,10 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     // ============================================
-    // JPUSH (Aurora Mobile) - GRÁTIS y funciona desde Cuba
-    // Repositorio: https://maven.aliyun.com/repository/jcenter
-    // NOTA: Versión 4.3.9 no existe, usar 4.3.8
+    // JPUSH - COMENTADO TEMPORALMENTE (dependencia no disponible)
+    // La versión 4.3.8 no existe en repositorios Maven
     // ============================================
-    implementation("cn.jiguang.jpush:jpush:4.3.8")
+    // implementation("cn.jiguang.jpush:jpush:4.3.8")
 
     // Google Sign In
     implementation("com.google.android.gms:play-services-auth:21.3.0")
