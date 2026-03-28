@@ -4,46 +4,51 @@
 
 ### Cambios Recientes
 
-#### ✅ Completados
-- [x] **CATCH BLOCKS Y LOGGING FIX** (2026-03-28)
-  - [x] Fix catch block vacío en `ChatRepository.createDirectChat` (línea 74)
-  - [x] Fix logging inconsistente en `ChatViewModel.sendText` (línea 142)
-  - [x] Fix catch block con underscore en `Crypto.decrypt` (línea 20)
-  - [x] Agregado TAG constante en `Crypto.kt`
-  - [x] Lecciones documentadas en `specs/lessons.md`
-- [x] Especificaciones funcionales creadas (`specs/functional.md`)
-- [x] Especificaciones técnicas creadas (`specs/technical.md`)
-- [x] Lecciones aprendidas documentadas (`specs/lessons.md`)
-- [x] Estado del proyecto inicializado (`context/state.md`)
-- [x] Decisiones técnicas registradas (`context/decisions.md`)
-- [x] Configuración de hooks anti-errores (`.qwen/hooks/`)
-- [x] Tests de ThemeModels refactorizados con mejoras de calidad (2026-03-26)
-- [x] Code review aplicado con code-reviewer agent
-- [x] **TEST QUALITY REVIEW COMPLETADO** (2026-03-26)
-  - [x] Revisión de 19 archivos de test
-  - [x] Score overall: 78/100
-  - [x] Documentado en TEST_QUALITY_REVIEW.md
-  - [x] Lecciones agregadas a specs/lessons.md
-  - [x] Checklist de calidad de tests creada
-- [x] **TEST COVERAGE IMPROVEMENT - PHASE 1** (2026-03-26)
-  - [x] Análisis de gaps de cobertura documentado (`context/test-coverage-gaps.md`)
-  - [x] 8 nuevos archivos de test creados (67 tests adicionales)
-  - [x] `ChatRepositoryRealtimeTest.kt` - 22 tests para realtime subscriptions
-  - [x] `ChatRepositoryMessageOperationsTest.kt` - 29 tests para message CRUD
-  - [x] `ChatViewModelSendTextTest.kt` - 23 tests para envío con cifrado
-  - [x] `ChatViewModelDeleteMessageTest.kt` - 21 tests para delete operations
-  - [x] `ChatViewModelTypingTest.kt` - 19 tests para typing indicators
-  - [x] `PresenceRepositoryTypingTimeoutTest.kt` - 26 tests para typing timeout
-  - [x] `AuthRepositoryNetworkErrorTest.kt` - 31 tests para network errors
-  - [x] Cobertura estimada: 72% → 78%
-- [x] **FIREFBASE MIGRATION FIX - ChatScreen.kt** (2026-03-26)
-  - [x] Reemplazado FirebaseAuth por SupabaseConfig.client.auth
-  - [x] Corregidos todos los nombres de métodos del ViewModel
-  - [x] Corregidos todos los nombres de métodos del Repository
-  - [x] Eliminado StorageAcl reference (pendiente migración a Supabase Storage)
-  - [x] Agregado TAG constante para logging
-  - [x] Agregado import faltante de LaunchedEffect
-  - [x] Agregado import de dp para padding
+#### ✅ Completados - CONFIGURACIÓN DE CALIDAD (2026-03-28)
+- [x] **BUILD.GRADLE.KTS - Configuración estricta**
+  - [x] `lint.abortOnError: false → true`
+  - [x] `lint.checkReleaseBuilds: false → true`
+  - [x] `testOptions.isReturnDefaultValues: true → false`
+  
+- [x] **DETEKT.YML - Warnings como errores**
+  - [x] `warningsAsErrors: false → true` (detekt-minimal.yml)
+  - [x] `warningsAsErrors: false → true` (detekt.yml)
+
+- [x] **GITHUB ACTIONS - Tests ahora fallan**
+  - [x] Removido `continue-on-error: true` de tests
+  - [x] Agregada verificación de tests fallidos
+  - [x] Agregado paso final "Final Quality Check"
+
+#### ✅ Completados - SKILLS CREADOS (2026-03-28)
+- [x] **26 skills especializados creados**
+  - [x] 8 skills de implementación REAL del proyecto
+  - [x] 5 skills de best practices oficiales
+  - [x] 13 skills generales de arquitectura
+- [x] **11,817 líneas de documentación técnica**
+- [x] **Basado en código REAL + Android Developers oficial**
+
+#### ✅ Completados - JPush Fix (2026-03-28)
+- [x] JPush comentado en build.gradle.kts
+- [x] Inicialización de JPush comentada en App.kt
+- [x] Inicialización de JPush comentada en MainActivity.kt
+- [x] Build pasa sin errores de dependencias
+
+#### ✅ Completados - Actualización de Specs (2026-03-28)
+- [x] specs/functional.md actualizado con cambios recientes
+- [x] specs/technical.md actualizado con stack técnico real
+- [x] context/state.md actualizado con progreso
+
+#### ✅ Completados - Code Organization (2026-03-28)
+- [x] Skills actualizados con información OFICIAL de Android Developers
+- [x] Removidas todas las referencias a QWEN.md en skills de organización
+- [x] Aclarado que límites de líneas NO están en Android Developers oficial
+
+#### ✅ Completados - CATCH BLOCKS Y LOGGING FIX (2026-03-28)
+- [x] Fix catch block vacío en `ChatRepository.createDirectChat` (línea 74)
+- [x] Fix logging inconsistente en `ChatViewModel.sendText` (línea 142)
+- [x] Fix catch block con underscore en `Crypto.decrypt` (línea 20)
+- [x] Agregado TAG constante en `Crypto.kt`
+- [x] Lecciones documentadas en `specs/lessons.md`
 
 #### 🔄 En Progreso
 - [ ] Mockear dependencias en AuthRepositoryTest (ALTA PRIORIDAD)

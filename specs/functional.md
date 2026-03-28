@@ -190,10 +190,67 @@ Message App es una aplicación de mensajería para Android con soporte para:
 | Versión | Fecha | Cambios Principales |
 |---------|-------|---------------------|
 | 0.1.0 | 2026-03-24 | Specs iniciales |
-| | | |
+| 0.2.0 | 2026-03-28 | Actualización post JPush fix + testing improvements |
 
 ---
 
-**Última Actualización:** 2026-03-24  
+## 🚨 CAMBIOS RECIENTES IMPORTANTES (2026-03-28)
+
+### JPush Comentado Temporalmente
+**Motivo:** Versión 4.3.8/4.3.9 no existe en repositorios Maven
+
+**Solución temporal:**
+- ✅ JPush comentado en `build.gradle.kts`
+- ✅ Inicialización de JPush comentada en `App.kt` y `MainActivity.kt`
+- ✅ Build ahora pasa sin errores de dependencias
+
+**Próximos pasos:**
+- [ ] Buscar alternativa de notificaciones push que funcione en Cuba
+- [ ] Considerar ntfy.sh como alternativa self-hosted
+- [ ] O encontrar versión válida de JPush
+
+### Configuraciones de Calidad Actualizadas
+**Cambios en `build.gradle.kts`:**
+- ✅ `lint.abortOnError: false → true`
+- ✅ `lint.checkReleaseBuilds: false → true`
+- ✅ `testOptions.isReturnDefaultValues: true → false`
+
+**Cambios en `detekt.yml`:**
+- ✅ `warningsAsErrors: false → true` (ambos archivos)
+
+**Workflow GitHub Actions:**
+- ✅ `continue-on-error: true` removido de tests
+- ✅ Verificación de tests fallidos agregada
+- ✅ Ahora los tests SÍ fallan cuando hay errores
+
+---
+
+## 📚 SKILLS CREADOS (2026-03-28)
+
+### Skills Específicos del Proyecto (8)
+- ✅ `message-app-e2e-cipher-impl` - Implementación REAL de E2ECipher.kt
+- ✅ `message-app-supabase-config` - Configuración REAL de Supabase
+- ✅ `message-app-room-dao` - MessageDao.kt REAL
+- ✅ `message-app-chat-typing` - Typing indicators REAL
+- ✅ `message-app-message-status` - Sistema de ticks REAL
+- ✅ `message-app-user-pairing` - Emparejamiento REAL
+- ✅ `message-app-jpush-cuba` - JPush para Cuba (comentado)
+- ✅ `message-app-models-validation` - Validaciones en init blocks
+
+### Skills de Best Practices (5)
+- ✅ `android-testing-strategy` - Testing pyramid, unit/integration/E2E
+- ✅ `kdoc-documentation` - KDoc guidelines, tags, estructura
+- ✅ `code-organization` - Organización de archivos, estructura
+- ✅ `file-size-limits` - Límites oficiales de Android Developers
+- ✅ `kotlin-style-guide` - Style guide oficial
+
+### Skills Generales (13)
+- ✅ message-app-compose-ui, viewmodel, hilt, coroutines, testing, room, ktor, navigation, material3, crypto, rls, notifications, supabase
+
+**Total: 26 skills + 11,817 líneas de documentación**
+
+---
+
+**Última Actualización:** 2026-03-28  
 **Estado:** ✅ Activo  
-**Próxima Revisión:** 2026-03-31
+**Próxima Revisión:** 2026-04-04

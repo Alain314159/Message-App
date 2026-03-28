@@ -29,42 +29,57 @@
 ## 🛠️ Stack Técnico
 
 ### Lenguajes
-- **Kotlin**: 1.9.0+ (principal)
-- **Kotlin Coroutines**: 1.7.x
+- **Kotlin**: 2.1.0
+- **Kotlin Coroutines**: 1.10.1
 - **Kotlin Flow**: Para streams reactivos
+- **Kotlinx Serialization**: 1.7.3
 
 ### UI
 - **Jetpack Compose**: 1.5.x
 - **Material 3**: Para diseño
-- **Navigation Compose**: Navegación
+- **Navigation Compose**: Navegación type-safe
 - **Coil**: Carga de imágenes (avatars)
 
 ### Arquitectura
-- **Hilt**: Inyección de dependencias
+- **Hilt**: 2.50 (inyección de dependencias)
 - **ViewModel + StateFlow**: Gestión de estado UI
-- **Mavericks** (opcional): Para ViewModels más complejos
+- **SavedStateHandle**: Para persistencia en recreación
 
 ### Base de Datos
-- **Room**: 2.6.x (almacenamiento local)
-- **SQLCipher**: Para encriptación de DB (opcional)
+- **Room**: 2.6.1 (almacenamiento local)
+- **MessageDao**: Operaciones de mensajes
+- **Entidades**: MessageEntity, ChatEntity, UserEntity
 
 ### Red
 - **Supabase**: Backend como servicio
   - PostgreSQL: Base de datos
   - Realtime: WebSockets para mensajes
-  - Storage: Avatares y archivos
+  - Storage: Avatares y archivos (pendiente)
   - Auth: Autenticación
+- **Ktor**: 2.3.13 (HTTP client)
 
 ### Criptografía
-- **Tink**: Criptografía de alto nivel
-- **libsignal**: Protocolo Signal (E2EE)
+- **Android Keystore**: Almacenamiento seguro de claves
+- **AES-256-GCM**: Cifrado E2E
+- **E2ECipher**: Implementación propia (sin libs externas)
+
+### Notificaciones Push
+- **JPush**: ⚠️ COMENTADO TEMPORALMENTE (versión no disponible)
+- **Alternativa pendiente**: ntfy.sh u otra que funcione en Cuba
 
 ### Testing
-- **JUnit 4/5**: Tests unitarios
-- **MockK**: Mocking
-- **Kluent**: Aserciones
-- **Turbine**: Testing de Flows
+- **JUnit 4**: Tests unitarios
+- **MockK**: 1.13.12 (mocking)
+- **Truth**: 1.4.2 (asserctions)
+- **Turbine**: 1.1.0 (testing de Flows)
 - **Compose UI Test**: Tests de UI
+- **Room Testing**: 2.6.1 (tests de database)
+
+### Code Quality
+- **Detekt**: 1.23.8 (análisis estático Kotlin)
+- **KtLint**: 14.2.0 (formato de código)
+- **Android Lint**: Análisis estático de Android
+- **Configuración estricta**: `warningsAsErrors = true`
 
 ---
 
