@@ -400,8 +400,7 @@ class AuthRepository {
                 upsertUserProfile(uid)
 
                 // Generar clave maestra para cifrado
-                E2ECipher // Inicializar cifrado
-
+                // E2ECipher se inicializa automáticamente al usarse por primera vez
                 android.util.Log.d("AuthRepository", "Google login exitoso: $uid")
                 Result.success(uid)
 
