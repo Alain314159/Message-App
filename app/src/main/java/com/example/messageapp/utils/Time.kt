@@ -1,7 +1,7 @@
 package com.example.messageapp.utils
 
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 
 /**
  * Utilidades para manejo de tiempo
