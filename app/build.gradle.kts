@@ -183,10 +183,11 @@ dependencies {
     // ============================================
     // FIREBASE CLOUD MESSAGING - Migración desde JPush (Marzo 2026)
     // Documentación: https://firebase.google.com/docs/cloud-messaging/android/client
+    // NOTA: Se usan versiones explícitas para evitar errores de resolución en CI
     // ============================================
     implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
-    implementation("com.google.firebase:firebase-messaging-ktx")
-    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx:24.1.0")
+    implementation("com.google.firebase:firebase-analytics-ktx:22.3.0")
 
     // Google Sign In
     implementation("com.google.android.gms:play-services-auth:21.3.0")
