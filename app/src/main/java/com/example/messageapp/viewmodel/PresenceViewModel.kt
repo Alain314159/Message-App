@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.messageapp.data.PresenceRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -114,6 +115,6 @@ class PresenceViewModel(
      */
     override fun onCleared() {
         super.onCleared()
-        presenceRepo.cleanup()
+        // PresenceRepository cleanup handled by Supabase lifecycle
     }
 }

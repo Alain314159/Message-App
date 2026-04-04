@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.example.messageapp.core.FCMManager
 import com.example.messageapp.core.PresenceLifecycleManager
 import com.example.messageapp.navigation.AppNavigationHost
@@ -105,6 +106,7 @@ class MainActivity : ComponentActivity() {
         // Presence Manager - Estado online/offline
         presenceManager = PresenceLifecycleManager(
             context = this,
+            scope = lifecycleScope,
             onUpdatePresence = { online ->
                 authVm.updatePresence(online)
             }

@@ -5,7 +5,6 @@ import android.provider.ContactsContract
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
 import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.exception.SupabaseException
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -35,15 +34,9 @@ class ContactsRepository {
             )
 
             Result.success(Unit)
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error adding contact", e)
-            Result.failure(Exception("Error de base de datos: ${e.message}"))
-        } catch (e: SerializationException) {
-            Log.w(TAG, "Serialization error adding contact", e)
-            Result.failure(Exception("Error de datos: ${e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error adding contact", e)
-            Result.failure(e)
+            Log.w(TAG, "ContactsRepository: Error adding contact: ${e.message}", e)
+            Result.failure(Exception("Error de base de datos: ${e.message}"))
         }
     }
 
@@ -58,15 +51,9 @@ class ContactsRepository {
             }
 
             Result.success(Unit)
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error removing contact", e)
-            Result.failure(Exception("Error de base de datos: ${e.message}"))
-        } catch (e: SerializationException) {
-            Log.w(TAG, "Serialization error removing contact", e)
-            Result.failure(Exception("Error de datos: ${e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error removing contact", e)
-            Result.failure(e)
+            Log.w(TAG, "ContactsRepository: Error removing contact: ${e.message}", e)
+            Result.failure(Exception("Error de base de datos: ${e.message}"))
         }
     }
 
@@ -99,15 +86,9 @@ class ContactsRepository {
             }
 
             Result.success(contacts)
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error listing contacts", e)
-            Result.failure(Exception("Error de base de datos: ${e.message}"))
-        } catch (e: SerializationException) {
-            Log.w(TAG, "Serialization error listing contacts", e)
-            Result.failure(Exception("Error de datos: ${e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error listing contacts", e)
-            Result.failure(e)
+            Log.w(TAG, "ContactsRepository: Error listing contacts: ${e.message}", e)
+            Result.failure(Exception("Error de base de datos: ${e.message}"))
         }
     }
 
@@ -160,15 +141,9 @@ class ContactsRepository {
                     )
                 }
             )
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error searching users", e)
-            Result.failure(Exception("Error de base de datos: ${e.message}"))
-        } catch (e: SerializationException) {
-            Log.w(TAG, "Serialization error searching users", e)
-            Result.failure(Exception("Error de datos: ${e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error searching users", e)
-            Result.failure(e)
+            Log.w(TAG, "ContactsRepository: Error searching users: ${e.message}", e)
+            Result.failure(Exception("Error de base de datos: ${e.message}"))
         }
     }
 }

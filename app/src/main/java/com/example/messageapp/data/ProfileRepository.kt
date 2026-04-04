@@ -5,9 +5,7 @@ import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.crypto.E2ECipher
 import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.exception.SupabaseException
 import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.exception.PostgrestException
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,18 +41,9 @@ class ProfileRepository {
             }
 
             Result.success(Unit)
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "Postgrest error updating profile", e)
-            Result.failure(Exception("Error de base de datos: ${e.message}"))
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error updating profile", e)
-            Result.failure(Exception("Error de conexión: ${e.message}"))
-        } catch (e: SerializationException) {
-            Log.w(TAG, "Serialization error updating profile", e)
-            Result.failure(Exception("Error de datos: ${e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error updating profile", e)
-            Result.failure(e)
+            Log.w(TAG, "ProfileRepository: Error updating profile: ${e.message}", e)
+            Result.failure(Exception("Error de base de datos: ${e.message}"))
         }
     }
 
@@ -68,13 +57,13 @@ class ProfileRepository {
 
             // Bucket para avatares
             val bucket = storage.from("avatars")
-            
+
             // Nombre del archivo
             val fileName = "$uid/avatar.jpg"
 
             // Leer el archivo como ByteArray
             val bytes = readUriBytes(uri)
-            
+
             // Subir a Supabase Storage
             bucket.upload(fileName, bytes) {
                 upsert = true
@@ -94,18 +83,9 @@ class ProfileRepository {
             }
 
             Result.success(url)
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "Postgrest error uploading avatar", e)
-            Result.failure(Exception("Error de base de datos: ${e.message}"))
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error uploading avatar", e)
-            Result.failure(Exception("Error de almacenamiento: ${e.message}"))
-        } catch (e: SerializationException) {
-            Log.w(TAG, "Serialization error uploading avatar", e)
-            Result.failure(Exception("Error de datos: ${e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error uploading avatar", e)
-            Result.failure(e)
+            Log.w(TAG, "ProfileRepository: Error uploading avatar: ${e.message}", e)
+            Result.failure(Exception("Error de almacenamiento: ${e.message}"))
         }
     }
 
@@ -132,15 +112,9 @@ class ProfileRepository {
                     pairingCode = user.pairingCode
                 )
             )
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error getting profile", e)
-            Result.failure(Exception("Error de base de datos: ${e.message}"))
-        } catch (e: SerializationException) {
-            Log.w(TAG, "Serialization error getting profile", e)
-            Result.failure(Exception("Error de datos: ${e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error getting profile", e)
-            Result.failure(e)
+            Log.w(TAG, "ProfileRepository: Error getting profile: ${e.message}", e)
+            Result.failure(Exception("Error de base de datos: ${e.message}"))
         }
     }
 

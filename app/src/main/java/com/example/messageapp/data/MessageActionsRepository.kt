@@ -4,7 +4,6 @@ import android.util.Log
 import com.example.messageapp.model.Message
 import com.example.messageapp.supabase.SupabaseConfig
 import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.exception.PostgrestException
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -42,10 +41,8 @@ class MessageActionsRepository {
             ) {
                 filter { eq("id", chatId) }
             }
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "MessageActionsRepository: Postgrest error pinning message", e)
         } catch (e: Exception) {
-            Log.w(TAG, "MessageActionsRepository: Unexpected error pinning message", e)
+            Log.w(TAG, "MessageActionsRepository: Error pinning message: ${e.message}", e)
         }
     }
 
@@ -62,10 +59,8 @@ class MessageActionsRepository {
             ) {
                 filter { eq("id", chatId) }
             }
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "MessageActionsRepository: Postgrest error unpinning message", e)
         } catch (e: Exception) {
-            Log.w(TAG, "MessageActionsRepository: Unexpected error unpinning message", e)
+            Log.w(TAG, "MessageActionsRepository: Error unpinning message: ${e.message}", e)
         }
     }
 
@@ -93,12 +88,8 @@ class MessageActionsRepository {
             ) {
                 filter { eq("id", messageId) }
             }
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "MessageActionsRepository: Postgrest error deleting message for user", e)
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "MessageActionsRepository: Serialization error decoding message", e)
         } catch (e: Exception) {
-            Log.w(TAG, "MessageActionsRepository: Unexpected error deleting message for user", e)
+            Log.w(TAG, "MessageActionsRepository: Error deleting message for user: ${e.message}", e)
         }
     }
 
@@ -128,10 +119,8 @@ class MessageActionsRepository {
             ) {
                 filter { eq("id", chatId) }
             }
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "MessageActionsRepository: Postgrest error deleting message for all", e)
         } catch (e: Exception) {
-            Log.w(TAG, "MessageActionsRepository: Unexpected error deleting message for all", e)
+            Log.w(TAG, "MessageActionsRepository: Error deleting message for all: ${e.message}", e)
         }
     }
 
@@ -150,12 +139,9 @@ class MessageActionsRepository {
                 }
 
             response.size
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "MessageActionsRepository: Postgrest error counting unread messages", e)
-            throw e  // Propagar error para que el caller sepa que falló
         } catch (e: Exception) {
-            Log.w(TAG, "MessageActionsRepository: Unexpected error counting unread messages", e)
-            throw e  // Propagar error para que el caller sepa que falló
+            Log.w(TAG, "MessageActionsRepository: Error counting unread messages: ${e.message}", e)
+            throw e
         }
     }
 }

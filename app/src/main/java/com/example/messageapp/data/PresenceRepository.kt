@@ -3,7 +3,6 @@ package com.example.messageapp.data
 import android.util.Log
 import com.example.messageapp.model.Chat
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan.supabase.exception.SupabaseException
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.realtime.Realtime
@@ -76,12 +75,7 @@ class PresenceRepository {
                 }
             }
 
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error in setTypingStatus", e)
-        } catch (e: SerializationException) {
-            Log.w(TAG, "Serialization error in setTypingStatus", e)
         } catch (e: Exception) {
-            // ✅ CORREGIDO: Agregar logging consistente con TAG
             android.util.Log.w("PresenceRepository", "setTypingStatus failed: chatId=$chatId isTyping=$isTyping", e)
         }
     }
@@ -134,18 +128,12 @@ class PresenceRepository {
                 realtime.removeChannel(channel)
             }
 
-        } catch (e: SupabaseException) {
-            android.util.Log.w("PresenceRepository", "Supabase error observing typing", e)
-            close()
-        } catch (e: SerializationException) {
-            android.util.Log.w("PresenceRepository", "Serialization error observing typing", e)
-            close()
         } catch (e: Exception) {
-            android.util.Log.w("PresenceRepository", "Error al observar typing", e)
+            android.util.Log.w("PresenceRepository", "Error observing typing: ${e.message}", e)
             close()
         }
     }
-    
+
     /**
      * Actualiza el estado online/offline del usuario
      *
@@ -165,12 +153,8 @@ class PresenceRepository {
             ) {
                 filter { eq("id", userId) }
             }
-        } catch (e: SupabaseException) {
-            android.util.Log.w("PresenceRepository", "Supabase error updating online status", e)
-        } catch (e: SerializationException) {
-            android.util.Log.w("PresenceRepository", "Serialization error updating online status", e)
         } catch (e: Exception) {
-            android.util.Log.w("PresenceRepository", "Error al actualizar online status", e)
+            android.util.Log.w("PresenceRepository", "Error updating online status: ${e.message}", e)
         }
     }
     
@@ -216,18 +200,12 @@ class PresenceRepository {
                 realtime.removeChannel(channel)
             }
 
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "PresenceRepository: Supabase error observing online status", e)
-            close()
-        } catch (e: SerializationException) {
-            Log.w(TAG, "PresenceRepository: Serialization error observing online status", e)
-            close()
         } catch (e: Exception) {
-            Log.w(TAG, "PresenceRepository: Error al observar online status", e)
+            Log.w(TAG, "PresenceRepository: Error observing online status: ${e.message}", e)
             close()
         }
     }
-    
+
     /**
      * Obtiene el last seen de la pareja
      *
@@ -243,17 +221,9 @@ class PresenceRepository {
                 .decodeSingleOrNull<UserLastSeenResponse>()
 
             response?.lastSeen
-        } catch (e: SupabaseException) {
-            // ✅ CORREGIDO: No retornar null silenciosamente - loguear
-            Log.w(TAG, "PresenceRepository: Supabase error in getPartnerLastSeen: partnerId=$partnerId", e)
-            null  // En este caso null es aceptable como "no disponible"
-        } catch (e: SerializationException) {
-            Log.w(TAG, "PresenceRepository: Serialization error in getPartnerLastSeen: partnerId=$partnerId", e)
-            null
         } catch (e: Exception) {
-            // ✅ CORREGIDO: No retornar null silenciosamente - loguear
             Log.w(TAG, "PresenceRepository: getPartnerLastSeen failed: partnerId=$partnerId", e)
-            null  // En este caso null es aceptable como "no disponible"
+            null
         }
     }
 }

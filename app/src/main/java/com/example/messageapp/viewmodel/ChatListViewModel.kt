@@ -5,11 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.messageapp.data.ChatRepository
 import com.example.messageapp.model.Chat
-import io.github.jan.supabase.exception.SupabaseException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerializationException
 
 private const val TAG = "MessageApp"
 
@@ -58,16 +56,6 @@ class ChatListViewModel(
                     _error.value = null
                     Log.d(TAG, "ChatListViewModel: Loaded ${chatList.size} chats")
                 }
-            } catch (e: SupabaseException) {
-                Log.w(TAG, "Supabase error loading chats", e)
-                _error.value = "Error de conexión al cargar chats"
-                _isLoading.value = false
-                scheduleRetry(myUid)
-            } catch (e: SerializationException) {
-                Log.w(TAG, "Serialization error loading chats", e)
-                _error.value = "Error de datos al cargar chats"
-                _isLoading.value = false
-                scheduleRetry(myUid)
             } catch (e: Exception) {
                 val errorMsg = "Error al cargar chats: ${e.message}"
                 Log.e(TAG, "ChatListViewModel: Error observando chats", e)

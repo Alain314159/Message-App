@@ -6,7 +6,6 @@ import com.example.messageapp.model.User
 import com.example.messageapp.supabase.SupabaseConfig
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.exception.PostgrestException
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -69,14 +68,8 @@ class AuthReadRepository {
                 .decodeSingle<User>()
 
             response
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "AuthReadRepository: Postgrest error getting user", e)
-            null
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "AuthReadRepository: Serialization error decoding user", e)
-            null
         } catch (e: Exception) {
-            Log.e(TAG, "AuthReadRepository: Unexpected error getting user", e)
+            Log.w(TAG, "AuthReadRepository: Error getting user: ${e.message}", e)
             null
         }
     }

@@ -1,7 +1,9 @@
 package com.example.messageapp.core
 
 import android.content.Context
-import com.example.messageapp.data.NotificationRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Gestiona el ciclo de vida de la presencia del usuario (online/offline)
@@ -16,6 +18,7 @@ import com.example.messageapp.data.NotificationRepository
  */
 class PresenceLifecycleManager(
     private val context: Context,
+    private val scope: CoroutineScope,
     private val onUpdatePresence: suspend (Boolean) -> Unit
 ) {
 
@@ -23,20 +26,26 @@ class PresenceLifecycleManager(
      * Called when activity resumes - mark user as online
      */
     fun onResume() {
-        onUpdatePresence(true)
+        scope.launch(Dispatchers.IO) {
+            onUpdatePresence(true)
+        }
     }
 
     /**
      * Called when activity pauses - mark user as offline
      */
     fun onPause() {
-        onUpdatePresence(false)
+        scope.launch(Dispatchers.IO) {
+            onUpdatePresence(false)
+        }
     }
 
     /**
      * Called when activity is destroyed - mark user as offline
      */
     fun onDestroy() {
-        onUpdatePresence(false)
+        scope.launch(Dispatchers.IO) {
+            onUpdatePresence(false)
+        }
     }
 }

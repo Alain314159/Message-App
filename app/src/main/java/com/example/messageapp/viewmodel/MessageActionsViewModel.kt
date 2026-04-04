@@ -6,11 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.messageapp.crypto.MessageDecryptor
 import com.example.messageapp.data.ChatRepository
 import com.example.messageapp.model.Message
-import io.github.jan.supabase.exception.SupabaseException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerializationException
 
 // ✅ TAG constante para logging
 private const val TAG = "MessageApp"
@@ -49,14 +47,8 @@ class MessageActionsViewModel(
                     "[${message.type}]"
                 }
                 repo.pinMessage(chatId, message.id, snippet)
-            } catch (e: SupabaseException) {
-                Log.w(TAG, "Supabase error pinning message", e)
-                _error.value = "Error de conexión al fijar mensaje"
-            } catch (e: SerializationException) {
-                Log.w(TAG, "Serialization error pinning message", e)
-                _error.value = "Error de datos al fijar mensaje"
             } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error pinning message", e)
+                Log.e(TAG, "Error pinning message", e)
                 _error.value = "Error al fijar mensaje: ${e.message}"
             }
         }
@@ -69,14 +61,8 @@ class MessageActionsViewModel(
         viewModelScope.launch {
             try {
                 repo.unpinMessage(chatId)
-            } catch (e: SupabaseException) {
-                Log.w(TAG, "Supabase error unpinning message", e)
-                _error.value = "Error de conexión al desfijar mensaje"
-            } catch (e: SerializationException) {
-                Log.w(TAG, "Serialization error unpinning message", e)
-                _error.value = "Error de datos al desfijar mensaje"
             } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error unpinning message", e)
+                Log.e(TAG, "Error unpinning message", e)
                 _error.value = "Error al desfijar mensaje: ${e.message}"
             }
         }
@@ -89,14 +75,8 @@ class MessageActionsViewModel(
         viewModelScope.launch {
             try {
                 repo.deleteMessageForUser(chatId, messageId, uid)
-            } catch (e: SupabaseException) {
-                Log.w(TAG, "Supabase error deleting message", e)
-                _error.value = "Error al eliminar mensaje"
-            } catch (e: SerializationException) {
-                Log.w(TAG, "Serialization error deleting message", e)
-                _error.value = "Error de datos al eliminar mensaje"
             } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error deleting message", e)
+                Log.e(TAG, "Error deleting message", e)
                 _error.value = "Error al eliminar mensaje: ${e.message}"
             }
         }
@@ -109,14 +89,8 @@ class MessageActionsViewModel(
         viewModelScope.launch {
             try {
                 repo.deleteMessageForAll(chatId, messageId)
-            } catch (e: SupabaseException) {
-                Log.w(TAG, "Supabase error deleting message", e)
-                _error.value = "Error al eliminar mensaje"
-            } catch (e: SerializationException) {
-                Log.w(TAG, "Serialization error deleting message", e)
-                _error.value = "Error de datos al eliminar mensaje"
             } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error deleting message", e)
+                Log.e(TAG, "Error deleting message", e)
                 _error.value = "Error al eliminar mensaje: ${e.message}"
             }
         }

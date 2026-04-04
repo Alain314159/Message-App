@@ -7,6 +7,10 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
+import java.net.UnknownHostException
+import java.net.SocketTimeoutException
+import java.io.IOException
 
 // Tag constante para logging
 private const val TAG = "MessageApp.AvatarRepository"
@@ -30,20 +34,8 @@ class AvatarRepository {
                 .decodeSingleOrNull<UserAvatarResponse>()
 
             response?.avatarType?.let { AvatarType.fromId(it) } ?: AvatarType.CERDITA
-        } catch (e: io.github.jan-tennert.supabase.exception.SupabaseException) {
-            Log.w(TAG, "Supabase error getting avatar for $userId", e)
-            AvatarType.CERDITA
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "Serialization error getting avatar", e)
-            AvatarType.CERDITA
-        } catch (e: java.net.UnknownHostException) {
-            Log.w(TAG, "Network error getting avatar for $userId - no connectivity", e)
-            AvatarType.CERDITA
-        } catch (e: java.net.SocketTimeoutException) {
-            Log.w(TAG, "Timeout error getting avatar for $userId", e)
-            AvatarType.CERDITA
-        } catch (e: java.io.IOException) {
-            Log.w(TAG, "IO error getting avatar for $userId", e)
+        } catch (e: Exception) {
+            Log.w(TAG, "AvatarRepository: Error getting avatar for $userId: ${e.message}", e)
             AvatarType.CERDITA
         }
     }
@@ -63,21 +55,18 @@ class AvatarRepository {
             }
 
             Result.success(Unit)
-        } catch (e: io.github.jan-tennert.supabase.exception.SupabaseException) {
-            Log.w(TAG, "Supabase error updating avatar for $userId", e)
-            Result.failure(Exception("Error de base de datos: ${e.message}"))
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "Serialization error updating avatar", e)
-            Result.failure(Exception("Error de serialización: ${e.message}"))
-        } catch (e: java.net.UnknownHostException) {
+        } catch (e: UnknownHostException) {
             Log.w(TAG, "Network error updating avatar for $userId - no connectivity", e)
             Result.failure(Exception("Error de conexión: sin red"))
-        } catch (e: java.net.SocketTimeoutException) {
+        } catch (e: SocketTimeoutException) {
             Log.w(TAG, "Timeout error updating avatar for $userId", e)
             Result.failure(Exception("Tiempo de espera agotado"))
-        } catch (e: java.io.IOException) {
+        } catch (e: IOException) {
             Log.w(TAG, "IO error updating avatar for $userId", e)
             Result.failure(Exception("Error de E/S: ${e.message}"))
+        } catch (e: Exception) {
+            Log.w(TAG, "AvatarRepository: Error updating avatar for $userId: ${e.message}", e)
+            Result.failure(Exception("Error de base de datos: ${e.message}"))
         }
     }
 

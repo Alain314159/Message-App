@@ -57,6 +57,20 @@ jobs:
         restore-keys: |
           gradle-${{ runner.os }}-
 
+    # 3b. Configurar credenciales de Supabase
+    - name: 🔐 Configurar Supabase Credentials
+      run: |
+        cat > gradle.properties << EOF
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true
+android.suppressUnsupportedCompileSdk=36
+SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+EOF
+        echo "✅ gradle.properties configurado"
+
     # 4. Setup Gradle Wrapper
     - name: Dar permisos a Gradle Wrapper
       run: chmod +x gradlew

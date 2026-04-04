@@ -194,3 +194,4 @@ private fun PhoneAuthSection(
         if (msg != null) Text(msg, color = MaterialTheme.colorScheme.error)
     }
 }
+*/

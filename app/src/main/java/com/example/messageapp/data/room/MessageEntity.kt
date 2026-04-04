@@ -2,6 +2,21 @@ package com.example.messageapp.data.room
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+
+/**
+ * TypeConverter para List<String> <-> JSON String
+ */
+class MessageConverters {
+    @TypeConverter
+    fun fromStringList(value: List<String>): String = Json.encodeToString(value)
+
+    @TypeConverter
+    fun toStringList(value: String): List<String> =
+        runCatching { Json.decodeFromString<List<String>>(value) }.getOrDefault(emptyList())
+}
 
 /**
  * Entidad Room para mensajes almacenados localmente.

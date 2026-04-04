@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan.supabase.exception.SupabaseException
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
@@ -100,14 +99,14 @@ class StorageRepository @Inject constructor(
             }
 
             Result.success(Unit)
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error sending media", e)
+        } catch (e: Exception) {
+            Log.w(TAG, "StorageRepository: Error sending media: ${e.message}", e)
             Result.failure(Exception("Error de base de datos: ${e.message}"))
         } catch (e: IOException) {
-            Log.w(TAG, "IO error reading media file", e)
+            Log.w(TAG, "StorageRepository: IO error reading media file", e)
             Result.failure(Exception("Error de archivo: ${e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error sending media", e)
+            Log.e(TAG, "StorageRepository: Unexpected error sending media", e)
             Result.failure(e)
         }
     }
@@ -118,18 +117,18 @@ class StorageRepository @Inject constructor(
     suspend fun deleteMedia(mediaUrl: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val bucket = storage.from("chat-media")
-            
+
             // Extraer el path de la URL
             val fileName = mediaUrl.substringAfter("/object/public/chat-media/")
-            
+
             bucket.delete(fileName)
 
             Result.success(Unit)
-        } catch (e: SupabaseException) {
-            Log.w(TAG, "Supabase error deleting media", e)
+        } catch (e: Exception) {
+            Log.w(TAG, "StorageRepository: Error deleting media: ${e.message}", e)
             Result.failure(Exception("Error de almacenamiento: ${e.message}"))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error deleting media", e)
+            Log.e(TAG, "StorageRepository: Unexpected error deleting media", e)
             Result.failure(e)
         }
     }

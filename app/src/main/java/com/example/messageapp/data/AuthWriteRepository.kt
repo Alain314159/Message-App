@@ -13,12 +13,9 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.providers.Email
 import io.github.jan.supabase.auth.providers.IDToken
 import io.github.jan.supabase.auth.providers.Google
-import io.github.jan.supabase.auth.exception.AuthErrorCode
-import io.github.jan.supabase.auth.exception.AuthRestException
-import io.github.jan.supabase.auth.exception.AuthWeakPasswordException
-import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationException
 
 // ✅ TAG constante para logging
 private const val TAG = "MessageApp"
@@ -73,16 +70,11 @@ class AuthWriteRepository(
             Log.d(TAG, "AuthWriteRepository: Usuario registrado: $uid")
             Result.success(uid)
 
-        } catch (e: AuthWeakPasswordException) {
-            Log.w(TAG, "AuthWriteRepository: Password débil", e)
-            Result.failure(IllegalArgumentException("Password demasiado débil"))
-        } catch (e: AuthRestException) {
-            Log.w(TAG, "AuthWriteRepository: Auth error: ${e.errorCode}", e)
-            Result.failure(Exception("Error de autenticación: ${e.errorCode}"))
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "AuthWriteRepository: Serialization error signing up", e)
-            Result.failure(Exception("Error de datos al registrar"))
         } catch (e: Exception) {
+            if (e.message?.contains("weak password", ignoreCase = true) == true) {
+                Log.w(TAG, "AuthWriteRepository: Password débil", e)
+                return@withContext Result.failure(IllegalArgumentException("Password demasiado débil"))
+            }
             Log.e(TAG, "AuthWriteRepository: Unexpected sign up error", e)
             Result.failure(e)
         }
@@ -115,15 +107,9 @@ class AuthWriteRepository(
             Log.d(TAG, "AuthWriteRepository: Usuario logueado: $uid")
             Result.success(uid)
 
-        } catch (e: AuthRestException) {
-            Log.w(TAG, "AuthWriteRepository: Auth error: ${e.errorCode}", e)
-            Result.failure(Exception("Email o contraseña inválidos"))
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "AuthWriteRepository: Serialization error signing in", e)
-            Result.failure(Exception("Error de datos al iniciar sesión"))
         } catch (e: Exception) {
-            Log.e(TAG, "AuthWriteRepository: Unexpected sign in error", e)
-            Result.failure(e)
+            Log.w(TAG, "AuthWriteRepository: Auth error signing in: ${e.message}", e)
+            Result.failure(Exception("Email o contraseña inválidos"))
         }
     }
 
@@ -150,15 +136,9 @@ class AuthWriteRepository(
             Log.d(TAG, "AuthWriteRepository: Usuario anónimo creado: $uid")
             Result.success(uid)
 
-        } catch (e: AuthRestException) {
-            Log.w(TAG, "AuthWriteRepository: Auth error creating anonymous user", e)
-            Result.failure(Exception("Error al crear usuario anónimo"))
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "AuthWriteRepository: Serialization error creating anonymous user", e)
-            Result.failure(Exception("Error de datos al crear usuario anónimo"))
         } catch (e: Exception) {
-            Log.e(TAG, "AuthWriteRepository: Unexpected anonymous sign in error", e)
-            Result.failure(e)
+            Log.w(TAG, "AuthWriteRepository: Auth error creating anonymous user: ${e.message}", e)
+            Result.failure(Exception("Error al crear usuario anónimo"))
         }
     }
 
@@ -212,7 +192,7 @@ class AuthWriteRepository(
         } catch (e: GetCredentialException) {
             Log.w(TAG, "AuthWriteRepository: Credential Manager error: ${e.message}", e)
             Result.failure(Exception("Error de Google Sign In: ${e.message}"))
-        } catch (e: kotlinx.serialization.SerializationException) {
+        } catch (e: SerializationException) {
             Log.w(TAG, "AuthWriteRepository: Serialization error in Google login", e)
             Result.failure(Exception("Error de datos en Google Sign In"))
         } catch (e: Exception) {
@@ -229,15 +209,9 @@ class AuthWriteRepository(
             auth.resetPasswordForEmail(email)
             Log.d(TAG, "AuthWriteRepository: Email de recuperación enviado")
             Result.success(Unit)
-        } catch (e: AuthRestException) {
-            Log.w(TAG, "AuthWriteRepository: Auth error sending password reset", e)
-            Result.failure(Exception("Error al enviar email de recuperación"))
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "AuthWriteRepository: Serialization error sending password reset", e)
-            Result.failure(Exception("Error de datos al enviar email"))
         } catch (e: Exception) {
-            Log.w(TAG, "AuthWriteRepository: Unexpected password reset error", e)
-            Result.failure(e)
+            Log.w(TAG, "AuthWriteRepository: Auth error sending password reset: ${e.message}", e)
+            Result.failure(Exception("Error al enviar email de recuperación"))
         }
     }
 
@@ -254,15 +228,9 @@ class AuthWriteRepository(
 
             Log.d(TAG, "AuthWriteRepository: Logout exitoso")
             Result.success(Unit)
-        } catch (e: io.github.jan-tennert.supabase.exception.SupabaseException) {
-            Log.w(TAG, "AuthWriteRepository: Supabase error during logout", e)
-            Result.failure(Exception("Error de conexión al cerrar sesión"))
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "AuthWriteRepository: Serialization error during logout", e)
-            Result.failure(Exception("Error de datos al cerrar sesión"))
         } catch (e: Exception) {
-            Log.e(TAG, "AuthWriteRepository: Unexpected logout error", e)
-            Result.failure(e)
+            Log.w(TAG, "AuthWriteRepository: Error during logout: ${e.message}", e)
+            Result.failure(Exception("Error de conexión al cerrar sesión"))
         }
     }
 
@@ -284,14 +252,8 @@ class AuthWriteRepository(
                 )
             )
             Log.d(TAG, "AuthWriteRepository: Perfil creado para: $uid")
-        } catch (e: io.github.jan-tennert.supabase.postgrest.exception.PostgrestException) {
-            Log.e(TAG, "AuthWriteRepository: Postgrest error creating profile", e)
-            throw e
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.e(TAG, "AuthWriteRepository: Serialization error creating profile", e)
-            throw e
         } catch (e: Exception) {
-            Log.e(TAG, "AuthWriteRepository: Unexpected error creating profile", e)
+            Log.e(TAG, "AuthWriteRepository: Postgrest error creating profile", e)
             throw e
         }
     }

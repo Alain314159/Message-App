@@ -4,7 +4,6 @@ import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.exception.PostgrestException
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -60,12 +59,8 @@ class AuthProfileRepository(
                 val email = auth.currentSessionOrNull()?.user?.email ?: ""
                 authWriteRepository.createUserProfile(uid, email)
             }
-        } catch (e: PostgrestException) {
-            Log.e(TAG, "AuthProfileRepository: Postgrest error in upsert profile", e)
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.e(TAG, "AuthProfileRepository: Serialization error in upsert profile", e)
         } catch (e: Exception) {
-            Log.e(TAG, "AuthProfileRepository: Unexpected error in upsert profile", e)
+            Log.e(TAG, "AuthProfileRepository: Error in upsert profile: ${e.message}", e)
         }
     }
 
@@ -86,12 +81,8 @@ class AuthProfileRepository(
                 filter { eq("id", uid) }
             }
             Log.d(TAG, "AuthProfileRepository: Presencia actualizada: $uid online=$online")
-        } catch (e: PostgrestException) {
-            Log.e(TAG, "AuthProfileRepository: Postgrest error updating presence", e)
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.e(TAG, "AuthProfileRepository: Serialization error updating presence", e)
         } catch (e: Exception) {
-            Log.e(TAG, "AuthProfileRepository: Unexpected error updating presence", e)
+            Log.e(TAG, "AuthProfileRepository: Error updating presence: ${e.message}", e)
         }
     }
 
@@ -111,12 +102,8 @@ class AuthProfileRepository(
                 filter { eq("id", uid) }
             }
             Log.d(TAG, "AuthProfileRepository: JPush Registration ID actualizado: $registrationId")
-        } catch (e: PostgrestException) {
-            Log.e(TAG, "AuthProfileRepository: Postgrest error updating JPush ID", e)
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.e(TAG, "AuthProfileRepository: Serialization error updating JPush ID", e)
         } catch (e: Exception) {
-            Log.e(TAG, "AuthProfileRepository: Unexpected error updating JPush ID", e)
+            Log.e(TAG, "AuthProfileRepository: Error updating JPush ID: ${e.message}", e)
         }
     }
 }

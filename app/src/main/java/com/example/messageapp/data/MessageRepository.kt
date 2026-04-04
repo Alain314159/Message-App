@@ -5,9 +5,7 @@ import com.example.messageapp.model.Message
 import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.utils.retryWithBackoff
 import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.exception.PostgrestException
 import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.realtime.exception.RealtimeException
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -86,14 +84,8 @@ class MessageRepository {
                                 markDelivered(chatId, message.id, myUid)
                             }
                         }
-                    } catch (e: PostgrestException) {
-                        Log.w(TAG, "MessageRepository: Postgrest error decoding message", e)
-                    } catch (e: RealtimeException) {
-                        Log.w(TAG, "MessageRepository: Realtime error receiving message", e)
-                    } catch (e: kotlinx.serialization.SerializationException) {
-                        Log.w(TAG, "MessageRepository: Serialization error decoding message", e)
                     } catch (e: Exception) {
-                        Log.w(TAG, "MessageRepository: Unexpected error processing message", e)
+                        Log.w(TAG, "MessageRepository: Error processing message: ${e.message}", e)
                     }
                 }
             }
@@ -120,17 +112,8 @@ class MessageRepository {
 
             Log.d(TAG, "MessageRepository: Loaded ${messages.size} messages for chat $chatId")
             messages
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "MessageRepository: Postgrest error loading messages", e)
-            emptyList()
-        } catch (e: RealtimeException) {
-            Log.w(TAG, "MessageRepository: Realtime error loading messages", e)
-            emptyList()
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "MessageRepository: Serialization error loading messages", e)
-            emptyList()
         } catch (e: Exception) {
-            Log.w(TAG, "MessageRepository: Unexpected error loading messages", e)
+            Log.w(TAG, "MessageRepository: Error loading messages: ${e.message}", e)
             emptyList()
         }
     }
@@ -205,12 +188,8 @@ class MessageRepository {
                     eq("id", messageId) and neq("sender_id", uid)
                 }
             }
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "MessageRepository: Postgrest error marking delivered", e)
-        } catch (e: RealtimeException) {
-            Log.w(TAG, "MessageRepository: Realtime error marking delivered", e)
         } catch (e: Exception) {
-            Log.w(TAG, "MessageRepository: Unexpected error marking delivered", e)
+            Log.w(TAG, "MessageRepository: Error marking delivered: ${e.message}", e)
         }
     }
 
@@ -230,12 +209,8 @@ class MessageRepository {
                     (isNull("read_at") or lt("read_at", System.currentTimeMillis() / 1000))
                 }
             }
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "MessageRepository: Postgrest error marking as read", e)
-        } catch (e: RealtimeException) {
-            Log.w(TAG, "MessageRepository: Realtime error marking as read", e)
         } catch (e: Exception) {
-            Log.w(TAG, "MessageRepository: Unexpected error marking as read", e)
+            Log.w(TAG, "MessageRepository: Error marking as read: ${e.message}", e)
         }
     }
 
@@ -307,14 +282,8 @@ class MessageRepository {
 
             Log.d(TAG, "MessageRepository: Loaded $limit older messages (${messages.size} returned)")
             messages
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "MessageRepository: Postgrest error loading older messages", e)
-            emptyList()
-        } catch (e: RealtimeException) {
-            Log.w(TAG, "MessageRepository: Realtime error loading older messages", e)
-            emptyList()
         } catch (e: Exception) {
-            Log.w(TAG, "MessageRepository: Unexpected error loading older messages", e)
+            Log.w(TAG, "MessageRepository: Error loading older messages: ${e.message}", e)
             emptyList()
         }
     }

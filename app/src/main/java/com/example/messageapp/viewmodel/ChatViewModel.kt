@@ -8,11 +8,9 @@ import com.example.messageapp.crypto.E2ECipher
 import com.example.messageapp.data.ChatRepository
 import com.example.messageapp.model.Chat
 import com.example.messageapp.model.Message
-import io.github.jan.supabase.exception.SupabaseException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerializationException
 
 // ✅ ERR-009: Tag constante para logging
 private const val TAG = "MessageApp"
@@ -81,14 +79,8 @@ class ChatViewModel(
                 repo.observeChat(chatId).collect { chat ->
                     _chat.value = chat
                 }
-            } catch (e: SupabaseException) {
-                Log.w(TAG, "Supabase error loading chat", e)
-                _error.value = "Error de conexión al cargar chat"
-            } catch (e: SerializationException) {
-                Log.w(TAG, "Serialization error loading chat", e)
-                _error.value = "Error de datos al cargar chat"
             } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error loading chat", e)
+                Log.e(TAG, "Error loading chat", e)
                 _error.value = "Error al cargar chat: ${e.message}"
             }
         }
@@ -111,16 +103,8 @@ class ChatViewModel(
                         markAsRead(chatId, myUid)
                     }
                 }
-            } catch (e: SupabaseException) {
-                Log.w(TAG, "Supabase error loading messages", e)
-                _error.value = "Error de conexión al cargar mensajes"
-                _isLoading.value = false
-            } catch (e: SerializationException) {
-                Log.w(TAG, "Serialization error loading messages", e)
-                _error.value = "Error de datos al cargar mensajes"
-                _isLoading.value = false
             } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error loading messages", e)
+                Log.e(TAG, "Error loading messages", e)
                 _error.value = "Error al cargar mensajes: ${e.message}"
                 _isLoading.value = false
             }
@@ -159,14 +143,8 @@ class ChatViewModel(
                     textEnc = textEnc,
                     iv = iv
                 )
-            } catch (e: SupabaseException) {
-                Log.w(TAG, "Supabase error sending message", e)
-                _error.value = "Error de conexión al enviar mensaje"
-            } catch (e: SerializationException) {
-                Log.w(TAG, "Serialization error sending message", e)
-                _error.value = "Error de datos al enviar mensaje"
             } catch (e: Exception) {
-                Log.e(TAG, "Unexpected error sending message", e)
+                Log.e(TAG, "Error sending message", e)
                 _error.value = "Error al enviar mensaje: ${e.message}"
             }
         }

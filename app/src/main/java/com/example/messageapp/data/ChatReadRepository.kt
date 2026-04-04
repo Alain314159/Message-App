@@ -5,9 +5,7 @@ import com.example.messageapp.model.Chat
 import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.utils.retryWithBackoff
 import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.exception.PostgrestException
 import io.github.jan.supabase.realtime.Realtime
-import io.github.jan.supabase.realtime.exception.RealtimeException
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -74,14 +72,8 @@ class ChatReadRepository {
                 }
                 return@withContext chatId
             }
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "ChatReadRepository: Postgrest error verifying chat", e)
-        } catch (e: RealtimeException) {
-            Log.w(TAG, "ChatReadRepository: Realtime error", e)
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.w(TAG, "ChatReadRepository: Serialization error", e)
         } catch (e: Exception) {
-            Log.e(TAG, "ChatReadRepository: Unexpected error verifying chat", e)
+            Log.e(TAG, "ChatReadRepository: Error verifying chat: ${e.message}", e)
         }
 
         // Crear nuevo chat con retry
@@ -131,17 +123,8 @@ class ChatReadRepository {
                 val initialChats = loadChatsForUser(uid)
                 Log.d(TAG, "ChatReadRepository: Initial load completed, ${initialChats.size} chats")
                 trySend(initialChats)
-            } catch (e: PostgrestException) {
-                Log.w(TAG, "ChatReadRepository: Postgrest error loading initial chats", e)
-                trySend(emptyList())
-            } catch (e: RealtimeException) {
-                Log.w(TAG, "ChatReadRepository: Realtime error loading chats", e)
-                trySend(emptyList())
-            } catch (e: kotlinx.serialization.SerializationException) {
-                Log.w(TAG, "ChatReadRepository: Serialization error loading chats", e)
-                trySend(emptyList())
             } catch (e: Exception) {
-                Log.e(TAG, "ChatReadRepository: Unexpected error loading initial chats", e)
+                Log.e(TAG, "ChatReadRepository: Error loading initial chats: ${e.message}", e)
                 trySend(emptyList())
             }
         }
@@ -225,14 +208,8 @@ class ChatReadRepository {
                     filter { eq("id", chatId) }
                 }
                 .decodeSingleOrNull<Chat>()
-        } catch (e: PostgrestException) {
-            Log.w(TAG, "ChatReadRepository: Postgrest error loading chat $chatId", e)
-            null
-        } catch (e: RealtimeException) {
-            Log.w(TAG, "ChatReadRepository: Realtime error loading chat $chatId", e)
-            null
         } catch (e: Exception) {
-            Log.e(TAG, "ChatReadRepository: Unexpected error loading chat $chatId", e)
+            Log.e(TAG, "ChatReadRepository: Error loading chat $chatId: ${e.message}", e)
             null
         }
     }
@@ -253,17 +230,8 @@ class ChatReadRepository {
 
             Log.d(TAG, "ChatReadRepository: Loaded ${chats.size} chats for user $uid")
             chats
-        } catch (e: PostgrestException) {
-            Log.e(TAG, "ChatReadRepository: Postgrest error loading chats for user $uid", e)
-            emptyList()
-        } catch (e: RealtimeException) {
-            Log.e(TAG, "ChatReadRepository: Realtime error loading chats for user $uid", e)
-            emptyList()
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.e(TAG, "ChatReadRepository: Serialization error loading chats for user $uid", e)
-            emptyList()
         } catch (e: Exception) {
-            Log.e(TAG, "ChatReadRepository: Unexpected error loading chats for user $uid", e)
+            Log.e(TAG, "ChatReadRepository: Error loading chats for user $uid: ${e.message}", e)
             emptyList()
         }
     }

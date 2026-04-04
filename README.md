@@ -376,31 +376,6 @@ Estos features NO están incluidos. Se añadirán después:
 
 ---
 
-## 👥 Créditos
-
-**Desarrollo original:**
-- Gabriel Misao
-- Caroline Cortes
-- Angelo Toshio
-- Joao Vitor
-
-**Migración a Supabase y correcciones:**
-- Alain314159
-
-**Corrección de errores críticos (2026-04-04):**
-- Creación de SupabaseConfig.kt
-- Actualización de Ktor a 3.x
-- Fixes de seguridad en build
-- Protección de credenciales
-
----
-
-## 📄 Licencia
-
-Proyecto educativo - Universidad Federal de Uberlândia (UFU)
-
----
-
 **Última actualización:** 2026-04-04
 **Versión:** 2.5-supabase-fcm
 

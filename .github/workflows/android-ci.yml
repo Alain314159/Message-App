@@ -43,6 +43,25 @@ jobs:
         gradle-version: wrapper
         cache-read-only: false
 
+    # Inyectar credenciales de Supabase desde GitHub Secrets
+    - name: 🔐 Configure Supabase Credentials
+      run: |
+        echo "=== CONFIGURANDO CREDENCIALES DE SUPABASE ==="
+        # Crear gradle.properties con credenciales reales desde secrets
+        cat > gradle.properties << EOF
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true
+android.suppressUnsupportedCompileSdk=36
+SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+EOF
+        echo "✅ gradle.properties configurado con credenciales de Supabase"
+        # Verificar sin exponer valores
+        grep "SUPABASE_URL=" gradle.properties > /dev/null && echo "✅ SUPABASE_URL presente"
+        grep "SUPABASE_ANON_KEY=" gradle.properties > /dev/null && echo "✅ SUPABASE_ANON_KEY presente"
+
     - name: Cache Gradle dependencies
       uses: actions/cache@v5  # ✅ Node.js 24
       with:
@@ -152,6 +171,21 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
+
+    # Inyectar credenciales de Supabase desde GitHub Secrets
+    - name: 🔐 Configure Supabase Credentials
+      run: |
+        echo "=== CONFIGURANDO CREDENCIALES DE SUPABASE ==="
+        cat > gradle.properties << EOF
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true
+android.suppressUnsupportedCompileSdk=36
+SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+EOF
+        echo "✅ gradle.properties configurado"
 
     # Verificar estructura del proyecto
     - name: 📁 Verify Project Structure

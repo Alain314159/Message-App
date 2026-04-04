@@ -51,6 +51,25 @@ jobs:
           ${{ runner.os }}-gradle-
 
     # =============================================================================
+    # 3b. CONFIGURAR CREDENCIALES SUPABASE
+    # =============================================================================
+    - name: 🔐 Configurar Supabase Credentials
+      run: |
+        echo "╔════════════════════════════════════════════════════════╗"
+        echo "║        CONFIGURANDO CREDENCIALES DE SUPABASE           ║"
+        echo "╚════════════════════════════════════════════════════════╝"
+        cat > gradle.properties << EOF
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true
+android.suppressUnsupportedCompileSdk=36
+SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+EOF
+        echo "✅ gradle.properties configurado con credenciales de Supabase"
+
+    # =============================================================================
     # 4. DIAGNÓSTICO DEL PROYECTO
     # =============================================================================
     - name: 🔍 Diagnóstico del Proyecto Android
