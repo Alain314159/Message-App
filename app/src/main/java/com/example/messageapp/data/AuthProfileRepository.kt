@@ -40,7 +40,7 @@ class AuthProfileRepository(
                 .select(columns = Columns.list("id")) {
                     filter { eq("id", uid) }
                 }
-                .decodeSingleOrNull()
+                .decodeSingleOrNull<Map<String, Any?>>()
 
             if (existing != null) {
                 // Actualizar last_seen y online

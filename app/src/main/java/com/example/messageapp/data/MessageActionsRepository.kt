@@ -133,13 +133,15 @@ class MessageActionsRepository {
             val response = db.from("messages")
                 .select(columns = Columns.list("id")) {
                     filter {
-                        eq("chat_id", chatId) and
-                        neq("sender_id", uid) and
-                        (isNull("read_at"))
+                        and {
+                            eq("chat_id", chatId)
+                            neq("sender_id", uid)
+                            isNull("read_at")
+                        }
                     }
                 }
 
-            response.size
+            response.count?.toInt() ?: 0
         } catch (e: Exception) {
             Log.w(TAG, "MessageActionsRepository: Error counting unread messages: ${e.message}", e)
             throw e

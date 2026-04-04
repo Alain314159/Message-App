@@ -8,6 +8,7 @@ import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import kotlin.time.Duration.Companion.days
 import java.util.UUID
 
 /**
@@ -69,13 +70,13 @@ class MediaRepository {
             
             // Subir archivo
             bucket.upload(path, bytes) {
-                this.contentType = contentType
+                this.contentType = io.ktor.http.ContentType.parse(contentType)
             }
             
             // Crear URL firmada (válida por 7 días)
             val signedUrl = bucket.createSignedUrl(
                 path,
-                expiresIn = 7 * 24 * 60 * 60 // 7 días en segundos
+                expiresIn = 7.days // 7 días en segundos
             )
             
             Result.success(signedUrl)

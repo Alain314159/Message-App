@@ -8,6 +8,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.realtime.*
 
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -75,15 +76,13 @@ class MessageRepository {
         val job = launch {
             changeFlow.collect { action ->
                 val recordJson = when (action) {
-                    is PostgresAction.Insert -> action.record
-                    is PostgresAction.Update -> action.record
+                    is PostgresAction.Insert, is PostgresAction.Update, is PostgresAction.Select -> action.record
                     is PostgresAction.Delete -> action.oldRecord
-                    is PostgresAction.Select -> action.record
                     else -> null
                 }
                 if (recordJson != null) {
                     try {
-                        val message = Json.decodeFromJsonElement<Message>(recordJson)
+                        val message = Json.decodeFromJsonElement(recordJson)
                         if (message.chatId == chatId) {
                             val messages = loadMessages(chatId)
                             trySend(messages)

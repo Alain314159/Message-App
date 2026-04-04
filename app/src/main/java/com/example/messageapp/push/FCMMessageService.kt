@@ -4,6 +4,9 @@ import android.util.Log
 import com.example.messageapp.data.FCMNotificationData
 import com.example.messageapp.data.FCMTokenRepository
 import com.example.messageapp.supabase.SupabaseConfig
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.filter.*
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import io.github.jan.supabase.postgrest.Postgrest

@@ -187,7 +187,7 @@ class PresenceRepository {
                         else -> null
                     }
                     if (recordJson != null) {
-                        val userStatus = Json.decodeFromJsonElement<UserStatusResponse>(recordJson)
+                        val userStatus = Json.decodeFromJsonElement(recordJson)
                         if (userStatus.id == partnerId) {
                             trySend(userStatus.isOnline)
                         }

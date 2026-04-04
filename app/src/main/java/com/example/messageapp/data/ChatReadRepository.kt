@@ -7,6 +7,7 @@ import com.example.messageapp.utils.retryWithBackoff
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.realtime.*
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -185,7 +186,7 @@ class ChatReadRepository {
                     else -> null
                 }
                 if (recordJson != null) {
-                    val changedChat = Json.decodeFromJsonElement<Chat>(recordJson)
+                    val changedChat = Json.decodeFromJsonElement(recordJson)
                     if (changedChat.id == chatId) {
                         Log.d(TAG, "ChatReadRepository: Chat $chatId updated, emitting new state")
                         trySend(changedChat)
@@ -226,7 +227,7 @@ class ChatReadRepository {
                     filter {
                         contains("member_ids", listOf(uid))
                     }
-                    order("updated_at" to false) // DESC
+                    order("updated_at", Order.DESCENDING) // DESC
                 }
                 .decodeList<Chat>()
 
