@@ -1,4 +1,5 @@
 package com.example.messageapp.ui.chat
+import androidx.compose.animation.core.RepeatMode
 
 import android.content.Intent
 import android.net.Uri
