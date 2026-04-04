@@ -14,7 +14,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.runtime.rememberInfiniteTransition
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
