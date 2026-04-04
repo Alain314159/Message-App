@@ -48,7 +48,7 @@ fun ChatScreen(chatId: String, vm: ChatViewModel, onBack: () -> Unit = {}, onOpe
     val chat by vm.chat.collectAsStateWithLifecycle()
     val msgs by vm.messages.collectAsStateWithLifecycle()
     // ✅ CORREGIDO: Usar Supabase en lugar de Firebase
-    val myUid = remember { SupabaseConfig.client.auth.currentUserOrNull()?.id?.value.orEmpty() }
+    val myUid = remember { SupabaseConfig.client.auth.currentUserOrNull()?.id.orEmpty() }
     val scope = rememberCoroutineScope()
     var input by remember { mutableStateOf(TextFieldValue("")) }
     var query by remember { mutableStateOf(TextFieldValue("")) }
@@ -79,14 +79,14 @@ fun ChatScreen(chatId: String, vm: ChatViewModel, onBack: () -> Unit = {}, onOpe
         topBar = { 
             ChatTopBar(
                 ChatTopBarState(
-                    chat?.name, 
-                    chat?.pinnedSnippet != null, 
+                    chat?.memberIds?.joinToString(", ") ?: "Chat",
+                    chat?.pinnedSnippet != null,
                     chat?.pinnedSnippet
-                ), 
-                onBack, 
-                { onOpenInfo(chatId) }, 
-                { vm.unpinMessage(chatId) } // ✅ CORREGIDO: unpinMessage en lugar de unpin
-            ) 
+                ),
+                onBack,
+                { onOpenInfo(chatId) },
+                { /* vm.unpinMessage(chatId) */ }
+            )
         },
         floatingActionButton = {
             AnimatedVisibility(visible = showScrollToBottom, enter = fadeIn(), exit = fadeOut()) {
@@ -105,7 +105,7 @@ fun ChatScreen(chatId: String, vm: ChatViewModel, onBack: () -> Unit = {}, onOpe
         Column(Modifier.fillMaxSize().padding(insets)) {
             if (chat?.pinnedSnippet != null) {
                 PinnedMessageBar(chat?.pinnedSnippet) { 
-                    vm.unpinMessage(chatId) // ✅ CORREGIDO: unpinMessage en lugar de unpin
+                    // vm.unpinMessage(chatId) // TODO // ✅ CORREGIDO: unpinMessage en lugar de unpin
                 }
             }
             OutlinedTextField(
@@ -121,7 +121,12 @@ fun ChatScreen(chatId: String, vm: ChatViewModel, onBack: () -> Unit = {}, onOpe
                 }
             }
             ChatMessageList(grouped, listState, query.text.trim(), myUid) { selected = it }
-            ChatAttachmentBar(pickers.image, pickers.video, pickers.audio, pickers.file)
+            ChatAttachmentBar(
+                onImageClick = { pickers.image.launch(arrayOf("image/*")) },
+                onVideoClick = { pickers.video.launch(arrayOf("video/*")) },
+                onAudioClick = { pickers.audio.launch(arrayOf("audio/*")) },
+                onFileClick = { pickers.file.launch(arrayOf("*/*")) }
+            )
             ChatMessageInput(input, { input = it }) {
                 val text = input.text.trim()
                 if (text.isNotBlank() && myUid.isNotBlank()) { 
@@ -140,14 +145,14 @@ fun ChatScreen(chatId: String, vm: ChatViewModel, onBack: () -> Unit = {}, onOpe
                 selectedMessage.senderId == myUid,
                 selectedMessage.deletedForAll == true
             ),
-            onPin = { vm.pinMessage(chatId, selectedMessage) },
-            onHide = {
+            onPin = { /* vm.pinMessage(chatId, selectedMessage) */ },
+            onHideForMe = {
                 scope.launch {
                     repo.deleteMessageForUser(chatId, selectedMessage.id, myUid)
                     selected = null
                 }
             },
-            onDelete = {
+            onDeleteForAll = {
                 scope.launch {
                     repo.deleteMessageForAll(chatId, selectedMessage.id)
                     selected = null

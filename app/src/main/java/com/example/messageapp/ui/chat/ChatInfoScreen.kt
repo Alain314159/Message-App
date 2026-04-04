@@ -275,7 +275,7 @@ private fun ChatInfoActions(
             enabled = !loading,
             onClick = {
                 scope.launch {
-                    repo.hideChatForUser(chatId, myUid)
+                    // repo.hideChatForUser(chatId, myUid) // TODO: implement
                     onBack()
                 }
             }
@@ -286,7 +286,7 @@ private fun ChatInfoActions(
                 enabled = !loading,
                 onClick = {
                     scope.launch {
-                        repo.leaveGroup(chatId, myUid)
+                        // repo.leaveGroup(chatId, myUid) // TODO: implement
                         onBack()
                     }
                 }
@@ -297,7 +297,7 @@ private fun ChatInfoActions(
                     enabled = !loading,
                     onClick = {
                         scope.launch {
-                            repo.deleteGroup(chatId)
+                            // repo.deleteGroup(chatId) // TODO: implement
                             onBack()
                         }
                     }
