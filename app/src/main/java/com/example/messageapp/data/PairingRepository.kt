@@ -123,7 +123,7 @@ class PairingRepository {
                 .decodeSingleOrNull<PairingUserResult>()
                 ?: return@withContext Result.failure(Exception("Usuario no encontrado o ya emparejado"))
             
-            Result.success(user)
+            Result.success(User(id = user.id, email = user.email, displayName = user.displayName, photoUrl = user.photoUrl, isPaired = user.isPaired))
         } catch (e: Exception) {
             android.util.Log.w("PairingRepository", "Error al buscar por email", e)
             Result.failure(e)

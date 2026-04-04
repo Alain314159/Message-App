@@ -125,7 +125,7 @@ class ContactsRepository {
                 .select {
                     filter {
                         eq("email", email)
-                        not { eq("id", SupabaseConfig.client.auth.currentUserOrNull()?.id) }
+                        and { neq("id", SupabaseConfig.client.auth.currentUserOrNull()?.id) }
                     }
                 }
                 .decodeList<UserSearchResponse>()
