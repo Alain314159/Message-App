@@ -113,7 +113,7 @@ class ChatReadRepository {
         val channel = realtime.channel("chats:public:chats")
 
         // Flujo de cambios de PostgREST
-        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") { table = "chats" }
             table = "chats"
         }
 
@@ -168,7 +168,7 @@ class ChatReadRepository {
         // Suscribirse a cambios en este chat específico
         val channel = realtime.channel("chats:public:chats")
 
-        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") { table = "chats" }
             table = "chats"
         }
 

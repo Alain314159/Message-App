@@ -98,9 +98,9 @@ class PresenceRepository {
             val channel = realtime.channel("chats:public:chats")
 
             // Flujo de cambios
-            val changeFlow = channel.postgresChangeFlow<Chat>(schema = "public") {
-            table = "chats"
-        }
+            val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") { 
+                table = "chats"
+            }
 
             // Suscribirse
             channel.subscribe()
@@ -172,7 +172,7 @@ class PresenceRepository {
             val channel = realtime.channel("users:public:users")
 
             // Flujo de cambios
-            val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
+            val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") { 
             table = "users"
         }
 
