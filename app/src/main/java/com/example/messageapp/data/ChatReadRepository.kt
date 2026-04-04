@@ -13,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
@@ -123,7 +122,7 @@ class ChatReadRepository {
         Log.d(TAG, "ChatReadRepository: Subscribed to chats channel for user $uid")
 
         // Cargar chats iniciales en background
-        this.this.launch {
+        launch {
             try {
                 val initialChats = loadChatsForUser(uid)
                 Log.d(TAG, "ChatReadRepository: Initial load completed, ${initialChats.size} chats")
@@ -135,7 +134,7 @@ class ChatReadRepository {
         }
 
         // Escuchar cambios
-        val job = this.this.launch {
+        val job = launch {
             changeFlow.collect { change ->
                 Log.d(TAG, "ChatReadRepository: Received change event, reloading chats")
                 loadChatsForUser(uid)
@@ -154,7 +153,7 @@ class ChatReadRepository {
      */
     fun observeChat(chatId: String): Flow<Chat?> = callbackFlow {
         // Cargar estado inicial
-        this.this.launch {
+        launch {
             try {
                 val chat = loadChat(chatId)
                 trySend(chat)
@@ -173,12 +172,12 @@ class ChatReadRepository {
         }
 
         // Suscribirse al canal
-        this.launch {
+        launch {
             channel.subscribe()
         }
 
         // Escuchar cambios y recargar cuando haya actualizaciones
-        val job = this.launch {
+        val job = launch {
             changeFlow.collect { action ->
                 val recordJson = when (action) {
                     is PostgresAction.Insert, is PostgresAction.Update, is PostgresAction.Select -> action.record

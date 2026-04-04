@@ -148,7 +148,7 @@ fun AppNavigationHost(
                     nav.navigate("auth") { popUpTo(0) }
                 },
                 onBack = { nav.popBackStack() },
-                onOpenAvatarPicker = {
+                onOpenProfile = {
                     nav.navigate("avatar-picker")
                 }
             )

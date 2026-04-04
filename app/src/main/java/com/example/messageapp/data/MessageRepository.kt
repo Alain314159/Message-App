@@ -14,7 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
@@ -49,7 +48,7 @@ class MessageRepository {
      */
     fun observeMessages(chatId: String, myUid: String): Flow<List<Message>> = callbackFlow {
         // Cargar mensajes iniciales en una coroutine
-        this.launch {
+        launch {
             try {
                 val messages = loadMessages(chatId)
                 trySend(messages)
@@ -68,12 +67,12 @@ class MessageRepository {
         }
 
         // Suscribirse al canal
-        this.launch {
+        launch {
             channel.subscribe()
         }
 
         // Escuchar cambios
-        val job = this.launch {
+        val job = launch {
             changeFlow.collect { action ->
                 val recordJson = when (action) {
                     is PostgresAction.Insert, is PostgresAction.Update, is PostgresAction.Select -> action.record

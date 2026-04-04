@@ -14,7 +14,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.SerializationException
@@ -105,7 +104,7 @@ class PresenceRepository {
             // Suscribirse
             channel.subscribe()
 
-            val job = this.launch {
+            val job = launch {
                 changeFlow.collect { action ->
                     val recordJson = when (action) {
                         is PostgresAction.Insert, is PostgresAction.Update, is PostgresAction.Select -> action.record
@@ -179,7 +178,7 @@ class PresenceRepository {
             // Suscribirse
             channel.subscribe()
 
-            val job = this.launch {
+            val job = launch {
                 changeFlow.collect { action ->
                     val recordJson = when (action) {
                         is PostgresAction.Insert, is PostgresAction.Update, is PostgresAction.Select -> action.record
