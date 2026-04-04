@@ -34,7 +34,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -273,7 +272,7 @@ private fun ChatInfoActions(
         OutlinedButton(
             enabled = !loading,
             onClick = {
-                androidx.lifecycle.compose.LaunchedEffect(Unit) {
+                androidx.compose.runtime.LaunchedEffect(Unit) {
                     repo.hideChatForUser(chatId, myUid)
                     onBack()
                 }
@@ -284,7 +283,7 @@ private fun ChatInfoActions(
             OutlinedButton(
                 enabled = !loading,
                 onClick = {
-                    androidx.lifecycle.compose.LaunchedEffect(Unit) {
+                    androidx.compose.runtime.LaunchedEffect(Unit) {
                         repo.leaveGroup(chatId, myUid)
                         onBack()
                     }
@@ -295,7 +294,7 @@ private fun ChatInfoActions(
                 Button(
                     enabled = !loading,
                     onClick = {
-                        androidx.lifecycle.compose.LaunchedEffect(Unit) {
+                        androidx.compose.runtime.LaunchedEffect(Unit) {
                             repo.deleteGroup(chatId)
                             onBack()
                         }
