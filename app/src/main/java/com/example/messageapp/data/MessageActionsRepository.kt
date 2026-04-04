@@ -5,6 +5,7 @@ import com.example.messageapp.model.Message
 import com.example.messageapp.supabase.SupabaseConfig
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.postgrest.query.filter.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -139,7 +140,7 @@ class MessageActionsRepository {
                     }
                 }
 
-            response.count?.toInt() ?: 0
+            response.count(Count.EXACT) ?: 0
         } catch (e: Exception) {
             Log.w(TAG, "MessageActionsRepository: Error counting unread messages: ${e.message}", e)
             throw e
