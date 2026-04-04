@@ -2,10 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    // Requerido para Supabase (Kotlin Serialization) - versión compatible con Kotlin 2.1.0
-    kotlin("plugin.serialization") version "2.1.0"
+    // Requerido para Supabase (Kotlin Serialization) - versión compatible con Kotlin 1.9.22
+    kotlin("plugin.serialization") version "1.9.22"
     // Requerido para Room Database (KSP - Kotlin Symbol Processing)
-    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
+    id("com.google.devtools.ksp") version "1.9.22-1.0.18"
     // Firebase Cloud Messaging - Google Services Plugin
     id("com.google.gms.google-services")
 
@@ -24,11 +24,31 @@ android {
         minSdk = 26
         targetSdk = 35  // Cambiado a 35 (estable)
         versionCode = 1
-        versionName = "2.4-fcm" // Versión con Firebase Cloud Messaging
+        versionName = "2.5-supabase-fcm" // Versión con Supabase + FCM
+
+        // Validación de credenciales de Supabase en build time
+        val supabaseUrl = project.findProperty("SUPABASE_URL") as String?
+        val supabaseKey = project.findProperty("SUPABASE_ANON_KEY") as String?
+
+        if (supabaseUrl.isNullOrBlank()) {
+            throw GradleException(
+                "SUPABASE_URL no está configurada.\n" +
+                "1. Copia gradle.properties.example a gradle.properties\n" +
+                "2. Agrega tu URL de Supabase desde: https://supabase.com/dashboard → Settings → API"
+            )
+        }
+
+        if (supabaseKey.isNullOrBlank()) {
+            throw GradleException(
+                "SUPABASE_ANON_KEY no está configurada.\n" +
+                "1. Copia gradle.properties.example a gradle.properties\n" +
+                "2. Agrega tu Anon Key desde: https://supabase.com/dashboard → Settings → API"
+            )
+        }
 
         // Supabase credentials - Se cargan desde gradle.properties (BUILD CONFIG)
-        buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseKey\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -49,11 +69,11 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "21"
+        jvmTarget = "17"
         freeCompilerArgs += listOf(
             "-opt-in=kotlin.RequiresOptIn",
             "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
@@ -167,15 +187,15 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:storage-kt:3.4.1")  // Storage
 
     // ============================================
-    // KTOR - Versión compatible con Supabase 3.4.1
-    // NOTA: Ktor 3.x no existe, usar versión 2.x estable
+    // KTOR - Versión 3.x compatible con Supabase 3.4.1
+    // Documentación: https://ktor.io/docs/welcome.html
     // ============================================
-    implementation("io.ktor:ktor-client-android:2.3.13")
-    implementation("io.ktor:ktor-client-core:2.3.13")
-    implementation("io.ktor:ktor-utils:2.3.13")
-    implementation("io.ktor:ktor-client-plugins:2.3.13")
-    implementation("io.ktor:ktor-client-content-negotiation:2.3.13")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.13")
+    implementation("io.ktor:ktor-client-android:3.3.0")
+    implementation("io.ktor:ktor-client-core:3.3.0")
+    implementation("io.ktor:ktor-utils:3.3.0")
+    implementation("io.ktor:ktor-client-plugins:3.3.0")
+    implementation("io.ktor:ktor-client-content-negotiation:3.3.0")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.0")
 
     // Kotlinx Serialization - Compatible con Kotlin 2.1.0
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")

@@ -9,11 +9,12 @@
 | **Cifrado** | Android Keystore | AES-256-GCM por chat |
 | **Pareja** | Código 6 dígitos + Email | Búsqueda e invitación |
 | **Frontend** | Corregir existente | Migración Firebase→Supabase |
-| **Push** | OneSignal 5.7.3 | Mantener implementación |
+| **Push** | Firebase Cloud Messaging (FCM) | Implementación actual |
 | **Multimedia** | Supabase Storage | Solo Storage (sin Cloudinary) |
 | **Presencia** | Completa | Online + Typing + Last seen |
 | **Ticks** | WhatsApp-style | Gris Koala / Rosa Chanchita |
 | **UI** | Material 3 | Tema romántico personalizado |
+| **Build** | Gradle 8.x + Kotlin 1.9.22 | Validación de credenciales |
 
 ---
 
@@ -102,14 +103,16 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    kotlin("plugin.serialization") version "1.9.21"
+    kotlin("plugin.serialization") version "1.9.22"
+    id("com.google.devtools.ksp") version "1.9.22-1.0.18"
+    id("com.google.gms.google-services") // Para FCM
 }
 
 android {
     namespace = "com.example.messageapp"
-    compileSdk = 36
+    compileSdk = 35
     minSdk = 26
-    targetSdk = 36
+    targetSdk = 35
 }
 
 dependencies {
@@ -121,32 +124,39 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    
+
     // Supabase 3.4.1 (Marzo 2026)
-    implementation(platform("io.github.jan.supabase:bom:3.4.1"))
-    implementation("io.github.jan.supabase:supabase-kt")
-    implementation("io.github.jan.supabase:auth-kt")
-    implementation("io.github.jan.supabase:postgrest-kt")
-    implementation("io.github.jan.supabase:realtime-kt")
-    implementation("io.github.jan.supabase:storage-kt")  // Multimedia
-    
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.4.1"))
+    implementation("io.github.jan-tennert.supabase:supabase-kt:3.4.1")
+    implementation("io.github.jan-tennert.supabase:auth-kt:3.4.1")
+    implementation("io.github.jan-tennert.supabase:postgrest-kt:3.4.1")
+    implementation("io.github.jan-tennert.supabase:realtime-kt:3.4.1")
+    implementation("io.github.jan-tennert.supabase:storage-kt:3.4.1")
+
     // Ktor 3.3.0 (requerido por Supabase 3.x)
     implementation("io.ktor:ktor-client-android:3.3.0")
     implementation("io.ktor:ktor-client-core:3.3.0")
-    
-    // OneSignal 5.7.3 (Marzo 2026)
-    implementation("com.onesignal:OneSignal:5.7.3")
-    
-    // Cifrado Android Keystore (nativo, sin librerías externas)
-    
+
+    // Firebase Cloud Messaging - Solo notificaciones push
+    implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
+    implementation("com.google.firebase:firebase-messaging-ktx:24.1.0")
+
+    // Google Sign In
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+
+    // Room Database
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
+
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.6.0")
-    
+
     // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
-    
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
 }
 ```
 
@@ -157,28 +167,46 @@ dependencies {
 ```
 app/src/main/java/com/example/messageapp/
 ├── core/
-│   ├── App.kt                    # Inicialización
+│   ├── App.kt                    # Inicialización FCM
 │   └── SessionManager.kt
 ├── data/
-│   ├── AuthRepository.kt         # Email + Google
-│   ├── ChatRepository.kt         # Mensajes + Realtime
+│   ├── AuthRepository.kt         # Facade (deprecated)
+│   ├── AuthReadRepository.kt     # Lectura de auth
+│   ├── AuthWriteRepository.kt    # Escritura de auth
+│   ├── AuthProfileRepository.kt  # Perfil de usuario
+│   ├── ChatReadRepository.kt     # Lectura de chats
+│   ├── ChatRepository.kt         # Facade (deprecated)
+│   ├── MessageRepository.kt      # Mensajes + Realtime
+│   ├── MessageActionsRepository.kt # Acciones de mensajes
 │   ├── PairingRepository.kt      # Código 6 dígitos
 │   ├── MediaRepository.kt        # Supabase Storage
-│   ├── NotificationRepository.kt # OneSignal
-│   └── PresenceRepository.kt     # Typing + Online
+│   ├── NotificationRepository.kt # Facade FCM
+│   ├── FCMConfigRepository.kt    # Configuración FCM
+│   ├── FCMTokenRepository.kt     # Tokens FCM
+│   ├── FCMLifecycleRepository.kt # Ciclo de vida FCM
+│   ├── PresenceRepository.kt     # Typing + Online
+│   ├── ContactsRepository.kt     # Contactos
+│   ├── StorageRepository.kt      # Almacenamiento
+│   └── ProfileRepository.kt      # Perfil completo
 ├── crypto/
-│   └── E2ECipher.kt              # Android Keystore
+│   ├── E2ECipher.kt              # Android Keystore
+│   └── MessageDecryptor.kt       # Desencriptación
 ├── model/
 │   ├── User.kt
 │   ├── Chat.kt
-│   ├── Message.kt                # Con MessageStatus
-│   └── MessageStatus.kt          # SENT/DELIVERED/READ
+│   ├── Message.kt                # Con estados
+│   ├── Avatar.kt
+│   └── ThemeModels.kt            # Colores y temas
 ├── supabase/
-│   └── SupabaseConfig.kt
+│   └── SupabaseConfig.kt         # ⭐ Cliente Supabase (NUEVO)
+├── push/
+│   ├── FCMMessageService.kt      # Servicio FCM
+│   └── JPushBroadcastReceiver.kt # Legacy (no usado)
 ├── ui/
 │   ├── theme/
 │   │   ├── Color.kt              # Rosa Chanchita + Gris Koala
-│   │   └── Theme.kt
+│   │   ├── Theme.kt
+│   │   └── Type.kt
 │   ├── auth/
 │   │   └── AuthScreen.kt
 │   ├── pairing/
@@ -186,15 +214,43 @@ app/src/main/java/com/example/messageapp/
 │   │   └── FindPartnerScreen.kt
 │   ├── chat/
 │   │   ├── ChatScreen.kt
-│   │   ├── MessageBubble.kt
-│   │   ├── MessageStatusIndicator.kt  # Ticks
-│   │   └── TypingIndicator.kt
-│   └── home/
-│       └── HomeScreen.kt
-└── viewmodel/
-    ├── AuthViewModel.kt
-    ├── PairingViewModel.kt
-    └── ChatViewModel.kt
+│   │   ├── ChatInputBar.kt
+│   │   ├── ChatMessageList.kt
+│   │   ├── ChatTopBar.kt
+│   │   ├── ChatComponents.kt
+│   │   ├── ChatHelpers.kt
+│   │   ├── ChatInfoScreen.kt
+│   │   ├── ChatActionsDialog.kt
+│   │   └── MessageBubble.kt
+│   ├── chatlist/
+│   │   ├── ChatListScreen.kt
+│   │   ├── ChatsTab.kt
+│   │   └── ChatListComponents.kt
+│   ├── profile/
+│   │   └── ProfileScreen.kt
+│   ├── contacts/
+│   │   ├── ContactsScreen.kt
+│   │   ├── DeviceContacts.kt
+│   │   └── ContactsPermissions.kt
+│   ├── groups/
+│   │   └── GroupCreateScreen.kt
+│   └── avatar/
+│       └── AvatarPickerScreen.kt
+├── viewmodel/
+│   ├── AuthViewModel.kt
+│   ├── ChatViewModel.kt
+│   ├── ChatListViewModel.kt
+│   ├── MessageActionsViewModel.kt
+│   ├── PresenceViewModel.kt
+│   ├── PairingViewModel.kt
+│   └── AvatarViewModel.kt
+├── utils/
+│   ├── Time.kt
+│   ├── Crypto.kt
+│   ├── Contacts.kt
+│   └── SignatureLogger.kt
+└── storage/
+    └── StorageAcl.kt
 ```
 
 ---
@@ -242,45 +298,56 @@ fun MessageStatusIndicator(status: MessageStatus, isMine: Boolean) {
 
 ## 🎯 CHECKLIST DE IMPLEMENTACIÓN
 
-### Fase 1: Corrección de Código (YA HECHO)
-- [x] Eliminar Firebase de build.gradle
-- [x] Agregar Supabase 3.4.1
-- [x] Agregar OneSignal 5.7.3
-- [x] Actualizar imports de `gotrue-kt` → `auth-kt`
-- [x] Actualizar Ktor 2.x → 3.x
-- [x] Crear Color.kt con Rosa Chanchita y Gris Koala
+### Fase 1: Corrección de Código (✅ HECHO 2026-04-04)
+- [x] Crear SupabaseConfig.kt con inicialización correcta
+- [x] Actualizar Ktor 2.x → 3.x (compatible con Supabase 3.4.1)
+- [x] Agregar import de E2ECipher en ChatViewModel
+- [x] Validación de credenciales en build time
+- [x] Remover google-services.json de git
+- [x] Crear placeholder google-services.json.example
+- [x] Actualizar documentación
 
-### Fase 2: Autenticación (PENDIENTE)
-- [ ] Corregir AuthScreen.kt (eliminar Firebase)
-- [ ] Implementar Google Sign In
-- [ ] Actualizar AuthRepository con Supabase Auth
+### Fase 2: Autenticación (✅ IMPLEMENTADO)
+- [x] AuthRepository con Supabase Auth
+- [x] AuthReadRepository - lectura de sesión
+- [x] AuthWriteRepository - operaciones de auth
+- [x] AuthProfileRepository - gestión de perfil
+- [x] Google Sign In configurado
+- [x] Login anónimo implementado
 
-### Fase 3: Emparejamiento (PENDIENTE)
-- [ ] Crear PairingRepository (código 6 dígitos)
-- [ ] Crear PairingScreen (UI de ingreso de código)
-- [ ] Crear FindPartnerScreen (búsqueda por email)
+### Fase 3: Chat y Mensajes (✅ IMPLEMENTADO)
+- [x] ChatReadRepository con Supabase Realtime
+- [x] MessageRepository - CRUD de mensajes
+- [x] MessageActionsRepository - pin, delete, etc.
+- [x] Cifrado E2E con Android Keystore
+- [x] Descifrado en ChatViewModel
+- [x] Observación en tiempo real
 
-### Fase 4: Chat y Mensajes (PENDIENTE)
-- [ ] Corregir ChatRepository (Supabase Realtime)
-- [ ] Implementar MessageStatusIndicator (ticks)
-- [ ] Agregar estados SENT/DELIVERED/READ
-- [ ] Actualizar ChatViewModel con nuevos estados
+### Fase 4: Presencia (✅ IMPLEMENTADO)
+- [x] PresenceRepository creado
+- [x] Indicadores online/offline
+- [x] Typing indicators
+- [x] Last seen tracking
 
-### Fase 5: Presencia (PENDIENTE)
-- [ ] Crear PresenceRepository (typing indicators)
-- [ ] Crear TypingIndicator composable
-- [ ] Implementar "en línea" / "última vez"
+### Fase 5: Notificaciones (✅ IMPLEMENTADO)
+- [x] Firebase Cloud Messaging configurado
+- [x] FCMMessageService implementado
+- [x] Token management
+- [x] Lifecycle handling
 
-### Fase 6: Multimedia (PENDIENTE)
-- [ ] Configurar bucket "chat-media" en Supabase
-- [ ] Implementar MediaRepository (solo Supabase)
-- [ ] Agregar picker de imágenes en ChatScreen
-- [ ] Implementar vista de imágenes/videos
+### Fase 6: Multimedia (✅ IMPLEMENTADO)
+- [x] Supabase Storage configurado
+- [x] StorageRepository implementado
+- [x] Avatar system
+- [x] Image loading con Coil
 
-### Fase 7: Notificaciones (YA HECHO)
-- [x] OneSignal 5.7.3 configurado
-- [x] NotificationRepository implementado
-- [ ] Verificar envío de notificaciones
+### Fase 7: Features Adicionales (⚠️ PENDIENTE)
+- [ ] Sistema de emparejamiento con código 6 dígitos
+- [ ] UI de pairing completa
+- [ ] MessageStatusIndicator (ticks visuales)
+- [ ] Animaciones románticas
+- [ ] Tema de colores completo
+- [ ] Contador de días juntos
 
 ---
 
@@ -300,6 +367,23 @@ fun MessageStatusIndicator(status: MessageStatus, isMine: Boolean) {
 
 # Clean build
 ./gradlew clean
+
+# Verificar credenciales (fallará si faltan)
+./gradlew assembleDebug --info
+```
+
+### Configuración Inicial
+
+```bash
+# 1. Copiar credenciales
+cp gradle.properties.example gradle.properties
+
+# 2. Editar con credenciales reales
+# Editar gradle.properties
+
+# 3. Configurar Firebase (opcional)
+# Descargar google-services.json desde Firebase Console
+# Colocar en app/google-services.json
 ```
 
 ### Database Schema
@@ -313,14 +397,17 @@ fun MessageStatusIndicator(status: MessageStatus, isMine: Boolean) {
 
 ## 📝 NOTAS IMPORTANTES
 
-1. **Multimedia:** Solo usar Supabase Storage (NO Cloudinary)
-2. **Colores:** Rosa Chanchita (#FF69B4) y Gris Koala (#8E8E93) en TODA la app
-3. **Ticks:** 1 tick gris (enviado), 2 ticks grises (entregado), 2 ticks rosas (leído)
-4. **Cifrado:** Android Keystore AES-256-GCM (ya implementado)
-5. **Backend:** Supabase (PostgreSQL + Realtime + Storage)
+1. **Credenciales:** NUNCA subas `gradle.properties` o `google-services.json` a git
+2. **Build:** Fallará temprano si faltan credenciales de Supabase
+3. **Multimedia:** Solo usar Supabase Storage (NO Cloudinary)
+4. **Colores:** Rosa Chanchita (#FF69B4) y Gris Koala (#8E8E93) en TODA la app
+5. **Ticks:** 1 tick gris (enviado), 2 ticks grises (entregado), 2 ticks rosas (leído)
+6. **Cifrado:** Android Keystore AES-256-GCM (ya implementado)
+7. **Backend:** Supabase (PostgreSQL + Realtime + Storage)
+8. **Notificaciones:** Firebase Cloud Messaging (FCM) únicamente
 
 ---
 
-**Fecha:** 23 de Marzo, 2026
-**Versión:** 1.0-couple
-**Estado:** En desarrollo
+**Fecha:** 4 de Abril, 2026
+**Versión:** 2.5-supabase-fcm
+**Estado:** 🚧 EN DESARROLLO - Correcciones críticas aplicadas

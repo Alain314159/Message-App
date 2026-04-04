@@ -60,7 +60,10 @@ captures/
 .cxx/
 
 # Google Services (e.g. APIs or Firebase)
-# google-services.json
+# ⚠️ NUNCA subir google-services.json con credenciales reales
+# Cada desarrollador debe generar su propio archivo desde Firebase Console
+google-services.json
+!google-services.json.example
 
 # Freeline
 freeline.py
@@ -101,7 +104,6 @@ supabase_config.env
 onesignal_config.env
 
 # Secret keys (IMPORTANT!)
-**/SupabaseConfig.kt
 **/local.properties
 **/secrets.properties
 **/gradle.properties

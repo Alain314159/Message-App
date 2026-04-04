@@ -1,28 +1,13 @@
 {
-  "_comment": "===========================================",
-  "_comment": "CONFIGURACIÓN DE FIREBASE CLOUD MESSAGING",
-  "_comment": "===========================================",
-  "_comment": "",
-  "_comment": "PASOS PARA OBTENER ESTE ARCHIVO:",
-  "_comment": "",
-  "_comment": "1. Ve a Firebase Console: https://console.firebase.google.com/",
-  "_comment": "2. Crea un nuevo proyecto o selecciona uno existente",
-  "_comment": "3. Agrega una app de Android con el package: com.example.messageapp",
-  "_comment": "4. Descarga el archivo google-services.json",
-  "_comment": "5. Coloca este archivo en: app/google-services.json",
-  "_comment": "",
-  "_comment": "===========================================",
-  "_comment": "ESTRUCTURA DEL ARCHIVO (ejemplo):",
-  "_comment": "===========================================",
   "project_info": {
-    "project_number": "123456789012",
-    "project_id": "tu-proyecto-firebase",
-    "storage_bucket": "tu-proyecto-firebase.appspot.com"
+    "project_number": "TU_PROJECT_NUMBER_AQUI",
+    "project_id": "TU_PROJECT_ID_AQUI",
+    "storage_bucket": "TU_PROJECT_ID_AQUI.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:abcdef123456",
+        "mobilesdk_app_id": "1:TU_PROJECT_NUMBER:android:TU_APP_ID",
         "android_client_info": {
           "package_name": "com.example.messageapp"
         }
@@ -30,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+          "current_key": "TU_API_KEY_AQUI"
         }
       ],
       "services": {

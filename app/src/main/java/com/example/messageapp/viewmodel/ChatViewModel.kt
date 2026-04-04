@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.messageapp.crypto.MessageDecryptor
+import com.example.messageapp.crypto.E2ECipher
 import com.example.messageapp.data.ChatRepository
 import com.example.messageapp.model.Chat
 import com.example.messageapp.model.Message

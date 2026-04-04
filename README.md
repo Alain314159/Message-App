@@ -2,48 +2,44 @@
 
 App de mensajería para Android con cifrado E2E, chat en tiempo real y notificaciones push.
 
-**Estado Actual:** ✅ **LISTO PARA PRODUCCIÓN** (verificado 2026-03-28)
+**Estado Actual:** 🚧 **EN DESARROLLO** (última actualización 2026-04-04)
 
-## 🚨 ÚLTIMA ACTUALIZACIÓN - 2026-03-28
+## 🚨 ÚLTIMA ACTUALIZACIÓN - 2026-04-04
 
-### ✅ Configuración de Calidad Completada
+### ✅ Correcciones Críticas Aplicadas
 
 | Componente | Cambio | Estado |
 |------------|--------|--------|
-| **build.gradle.kts** | `lint.abortOnError: true`, `testOptions.isReturnDefaultValues: false` | ✅ Completado |
-| **detekt.yml** | `warningsAsErrors: true` (ambos archivos) | ✅ Completado |
-| **GitHub Actions** | Tests ahora fallan si hay errores (removido `continue-on-error`) | ✅ Completado |
+| **SupabaseConfig.kt** | Archivo creado - inicialización correcta de Supabase | ✅ Completado |
+| **Ktor** | Actualizado de 2.3.13 → 3.3.0 (compatible con Supabase 3.4.1) | ✅ Completado |
+| **E2ECipher Import** | Agregado import faltante en ChatViewModel.kt | ✅ Completado |
+| **Seguridad** | Credenciales reales reemplazadas con placeholders | ✅ Completado |
+| **Firebase** | google-services.json removido de git (solo FCM) | ✅ Completado |
+| **Validación Build** | Build falla temprano si faltan credenciales | ✅ Completado |
 
-### ✅ Skills de Documentación Creados
-
-- **26 skills especializados** creados (8 de implementación real + 5 best practices + 13 generales)
-- **11,817 líneas de documentación técnica** generadas
-- Basado en código REAL + documentación oficial de Android Developers
-
-### ✅ JPush Fix (Notificaciones para Cuba)
+### ⚠️ Problemas Conocidos
 
 | Estado | Acción |
 |--------|--------|
-| ⚠️ **Comentado Temporalmente** | JPush 4.3.8/4.3.9 no existe en repositorios Maven |
-| ✅ **Build Funcional** | Inicialización de JPush comentada en App.kt y MainActivity.kt |
-| 🔍 **Búsqueda Activa** | Evaluando alternativas: ntfy.sh, Gotify, u otra solución self-hosted |
+| ⚠️ **Firebase Presente** | Solo se usa FCM para notificaciones push |
+| ℹ️ **Build Version** | 2.5-supabase-fcm (actualizada) |
+| 🔍 **Testing** | Cobertura ~72% (meta: 80%+) |
 
 ---
 
-## 📊 ESTADO DEL PROYECTO (2026-03-28)
+## 📊 ESTADO DEL PROYECTO (2026-04-04)
 
-### ✅ Código Verificado - Sin Errores Críticos
+### ✅ Código Verificado - Sin Errores Críticos de Compilación
 
-Después de verificación línea por línea del código fuente:
+Después de correcciones exhaustivas:
 
 | Categoría | Estado | Verificación |
 |-----------|--------|--------------|
-| **Validación de parámetros** | ✅ 100% | `require()` en todas las funciones críticas |
-| **Manejo de nulls** | ✅ 100% | `isNullOrBlank()` en todos lados |
-| **Logging consistente** | ✅ 100% | TAG constante `"MessageApp"` en todos los archivos |
-| **Catch blocks** | ✅ 100% | 82/82 con logging apropiado |
-| **Migración Supabase** | ✅ 99% | Firebase completamente removido |
-| **Tests unitarios** | ✅ 70+ tests | Cobertura estimada ~72% |
+| **SupabaseConfig.kt** | ✅ CREADO | Inicialización correcta con validación |
+| **Imports** | ✅ 100% | E2ECipher import agregado |
+| **Dependencias** | ✅ Correctas | Ktor 3.3.0 + Supabase 3.4.1 |
+| **Seguridad** | ✅ Asegurado | Credenciales validadas en build |
+| **Firebase** | ✅ Limpio | Solo FCM para notificaciones |
 
 ### 📈 Métricas de Calidad
 
@@ -60,20 +56,28 @@ Después de verificación línea por línea del código fuente:
 
 | Archivo | Propósito | Última Actualización |
 |---------|-----------|---------------------|
-| `README.md` | Este archivo - visión general | 2026-03-28 |
-| `specs/functional.md` | User stories y criterios de aceptación | 2026-03-28 |
-| `specs/technical.md` | Arquitectura y decisiones técnicas | 2026-03-28 |
-| `context/state.md` | Estado actual y progreso | 2026-03-28 |
-| `context/decisions.md` | Decisiones técnicas (ADRs) | 2026-03-28 |
-| `specs/lessons.md` | Lecciones aprendidas y errores | 2026-03-28 |
-| `ESTADO_REAL_PROYECTO.md` | Verificación exhaustiva de código | 2026-03-28 |
-| `TESTING_SUMMARY.md` | Resumen de tests y cobertura | 2026-03-28 |
+| `README.md` | Este archivo - visión general | 2026-04-04 |
+| `SECURITY_GUIDE.md` | Guía de seguridad actualizada | 2026-04-04 |
+| `TECHNICAL_SPECS.md` | Arquitectura y decisiones técnicas | Pendiente |
+| `QUICK_START.md` | Inicio rápido | Pendiente |
+| `CONFIGURATION_GUIDE.md` | Guía paso a paso | Pendiente |
 
 ---
 
 ## 📋 Configuración Rápida
 
-### 1. Supabase (5 minutos)
+### 1. Configurar Credenciales (5 minutos)
+
+```bash
+# Copiar plantilla de configuración
+cp gradle.properties.example gradle.properties
+
+# Editar gradle.properties con tus credenciales reales
+```
+
+**NO edites archivos Kotlin directamente** - Las credenciales se cargan desde `gradle.properties`
+
+### 2. Obtener Credenciales de Supabase
 
 ```
 1. Ve a https://supabase.com
@@ -87,43 +91,36 @@ Después de verificación línea por línea del código fuente:
    - anon/public key
 ```
 
-### 2. Ejecutar SQL en Supabase
+### 3. Ejecutar SQL en Supabase
 
 ```
 1. Ve a SQL Editor en Supabase
 2. Copia TODO el contenido de database_schema.sql
 3. Pega en el editor
 4. Click en "Run"
-5. ✅ Verifica en Table Editor que hay 4 tablas
+5. ✅ Verifica en Table Editor que hay 3 tablas (users, chats, messages)
 ```
 
-### 3. OneSignal (3 minutos)
+### 4. Configurar FCM para Notificaciones (Opcional)
 
 ```
-1. Ve a https://onesignal.com
-2. Sign Up → New App
-3. Nombre: "Message App"
-4. Plataforma: Android
-5. Copia el App ID
+1. Ve a https://console.firebase.google.com
+2. Crea proyecto o usa uno existente
+3. Agrega app Android con package: com.example.messageapp
+4. Descarga google-services.json
+5. Colócalo en: app/google-services.json
 ```
 
-### 4. Configurar la App
-
-Edita `app/src/main/java/com/example/messageapp/supabase/SupabaseConfig.kt`:
-
-```kotlin
-const val SUPABASE_URL = "https://tu-proyecto.supabase.co"
-const val SUPABASE_ANON_KEY = "eyJhbGc..."  // Tu anon key
-const val ONESIGNAL_APP_ID = "12345678-..."  // Tu App ID
-```
+**Nota:** El archivo `google-services.json` NO está en git por seguridad. Cada desarrollador debe generar el suyo.
 
 ### 5. Build y Test
 
 ```
 1. Abre en Android Studio
 2. Gradle Sync (espera a que termine)
-3. Run en dispositivo/emulador
-4. Prueba registro y chat
+3. Si falta credenciales, el build FALLARÁ con mensaje claro
+4. Run en dispositivo/emulador
+5. Prueba registro y chat
 ```
 
 ---
@@ -231,21 +228,34 @@ app/
 ## 🔧 Dependencias Principales
 
 ```kotlin
-// Supabase (2.1.0)
-implementation(platform("io.github.jan.supabase:bom:2.1.0"))
-implementation("io.github.jan.supabase:supabase-kt")
-implementation("io.github.jan.supabase:gotrue-kt")
-implementation("io.github.jan.supabase:postgrest-kt")
-implementation("io.github.jan.supabase:realtime-kt")
+// Supabase (3.4.1)
+implementation(platform("io.github.jan-tennert.supabase:bom:3.4.1"))
+implementation("io.github.jan-tennert.supabase:supabase-kt:3.4.1")
+implementation("io.github.jan-tennert.supabase:auth-kt:3.4.1")
+implementation("io.github.jan-tennert.supabase:postgrest-kt:3.4.1")
+implementation("io.github.jan-tennert.supabase:realtime-kt:3.4.1")
+implementation("io.github.jan-tennert.supabase:storage-kt:3.4.1")
 
-// OneSignal (5.6.1)
-implementation("com.onesignal:OneSignal:5.6.1")
+// Ktor (3.3.0) - Requerido por Supabase 3.x
+implementation("io.ktor:ktor-client-android:3.3.0")
+implementation("io.ktor:ktor-client-core:3.3.0")
 
-// Ktor
-implementation("io.ktor:ktor-client-android:2.3.7")
+// Firebase Cloud Messaging - Solo para notificaciones push
+implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
+implementation("com.google.firebase:firebase-messaging-ktx:24.1.0")
+
+// Google Sign In
+implementation("com.google.android.gms:play-services-auth:21.3.0")
+
+// Room Database
+implementation("androidx.room:room-runtime:2.6.1")
+implementation("androidx.room:room-ktx:2.6.1")
 
 // Kotlinx Serialization
-implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+// Coil para imágenes
+implementation("io.coil-kt:coil-compose:2.6.0")
 ```
 
 ---
@@ -308,12 +318,12 @@ onesignal_config.env
 
 | Componente | Versión Anterior | Versión Actual | Estado |
 |------------|------------------|----------------|--------|
-| Supabase SDK | `io.github.jan-tennert` | `io.github.jan.supabase` | ✅ Corregido |
-| OneSignal | `5.1.3` (API vieja) | `5.6.1` (API nueva) | ✅ Corregido |
-| Cifrado | libsodium-jni | Android Keystore | ✅ Corregido |
-| Database | TEXT para UUID | UUID nativo | ✅ Corregido |
-| Auth API | Incorrecta | Correcta | ✅ Corregido |
-| NotificationRepo | `getDeviceState()` | `pushSubscription.id` | ✅ Corregido |
+| Supabase SDK | `io.github.jan-tennert` 2.1.0 | `io.github.jan-tennert.supabase` 3.4.1 | ✅ Corregido |
+| Ktor | 2.3.13 | 3.3.0 | ✅ Corregido |
+| SupabaseConfig | No existía | Creado con validación | ✅ Corregido |
+| Seguridad Build | Sin validación | Falla temprano | ✅ Corregido |
+| Firebase | Completo | Solo FCM | ✅ Limpiado |
+| Credenciales Git | Exuestas | Protegidas | ✅ Asegurado |
 
 ---
 
@@ -345,10 +355,12 @@ Estos features NO están incluidos. Se añadirán después:
 
 | Error | Solución |
 |-------|----------|
-| "Unresolved reference: io.github.jan-tennert" | ✅ Ya corregido en esta versión |
-| "OneSignal.initialize() no existe" | ✅ Ya corregido (ahora usa 5.6.1) |
-| "Table does not exist" | Ejecuta database_schema.sql |
-| "Invalid API key" | Verifica credenciales en SupabaseConfig.kt |
+| "SUPABASE_URL no está configurada" | Copia `gradle.properties.example` a `gradle.properties` y agrega tus credenciales |
+| "Supabase credentials cannot be empty" | Verifica que `gradle.properties` tenga credenciales válidas |
+| "Table does not exist" | Ejecuta `database_schema.sql` en Supabase SQL Editor |
+| "Invalid API key" | Verifica credenciales en `gradle.properties` |
+| "Unresolved reference: E2ECipher" | ✅ Ya corregido - import agregado en ChatViewModel |
+| "google-services.json missing" | Descarga desde Firebase Console y coloca en `app/` |
 
 ---
 
@@ -372,11 +384,14 @@ Estos features NO están incluidos. Se añadirán después:
 - Angelo Toshio
 - Joao Vitor
 
-**Migración a Supabase:**
+**Migración a Supabase y correcciones:**
 - Alain314159
 
-**Corrección de errores:**
-- Revisión exhaustiva con documentación oficial Marzo 2026
+**Corrección de errores críticos (2026-04-04):**
+- Creación de SupabaseConfig.kt
+- Actualización de Ktor a 3.x
+- Fixes de seguridad en build
+- Protección de credenciales
 
 ---
 
@@ -386,24 +401,26 @@ Proyecto educativo - Universidad Federal de Uberlândia (UFU)
 
 ---
 
-**Última actualización:** 2026-03-23
-**Versión:** 2.1-supabase-fixed
+**Última actualización:** 2026-04-04
+**Versión:** 2.5-supabase-fcm
 
 ---
 
 ## 🎉 ¡Listo!
 
 Ahora tienes:
-- ✅ **8 errores críticos corregidos**
-- ✅ App migrada de Firebase a Supabase
-- ✅ Cifrado E2E real con Android Keystore
-- ✅ OneSignal 5.6.1+ para notificaciones
-- ✅ Todo verificado con documentación oficial
+- ✅ **SupabaseConfig.kt creado** - Inicialización correcta
+- ✅ **Ktor 3.3.0** - Compatible con Supabase 3.4.1
+- ✅ **Build validado** - Falla temprano si faltan credenciales
+- ✅ **Credenciales seguras** - Sin exposición en git
+- ✅ **Firebase limpio** - Solo FCM para notificaciones
 
 **Solo falta:**
-1. Configurar tus credenciales en `SupabaseConfig.kt`
-2. Ejecutar `database_schema.sql` en Supabase
-3. Hacer build y test
-4. ¡Añadir features románticos!
+1. Copiar `gradle.properties.example` a `gradle.properties`
+2. Agregar tus credenciales de Supabase
+3. Ejecutar `database_schema.sql` en Supabase
+4. (Opcional) Configurar Firebase para FCM
+5. Hacer build y test
+6. ¡Añadir features románticos!
 
 💕🚀🇨🇺

@@ -2,11 +2,22 @@
 
 Sigue esta guía **EXACTAMENTE** para configurar tu app.
 
+**⚠️ Última actualización:** 2026-04-04
+
 ---
 
-## 📌 PARTE 1: Configurar Supabase
+## 📌 PARTE 1: Configurar Credenciales
 
-### Paso 1.1: Crear Cuenta
+### Paso 1.1: Copiar Plantilla de Credenciales
+
+**⚠️ IMPORTANTE:** Las credenciales se cargan desde `gradle.properties`, NO desde código Kotlin.
+
+```bash
+# En la raíz del proyecto:
+cp gradle.properties.example gradle.properties
+```
+
+### Paso 1.2: Obtener Credenciales de Supabase
 
 1. Ve a https://supabase.com
 2. Click en **"Start your project"** o **"Sign Up"**
@@ -15,7 +26,7 @@ Sigue esta guía **EXACTAMENTE** para configurar tu app.
    - GitHub
    - Google
 
-### Paso 1.2: Crear Proyecto
+### Paso 1.3: Crear Proyecto
 
 1. Click en **"New Project"** (botón verde)
 2. Llena los datos:
@@ -26,7 +37,7 @@ Sigue esta guía **EXACTAMENTE** para configurar tu app.
 3. Click en **"Create new project"**
 4. ⏳ Espera 2-5 minutos mientras se crea el proyecto
 
-### Paso 1.3: Obtener Credenciales
+### Paso 1.4: Obtener Credenciales del Proyecto
 
 1. En el dashboard del proyecto, ve a **Settings** (engranaje abajo a la izquierda)
 2. Click en **API**
@@ -34,7 +45,19 @@ Sigue esta guía **EXACTAMENTE** para configurar tu app.
    - **Project URL:** `https://xxxxx.supabase.co`
    - **anon/public key:** `eyJhbG...` (cadena larga)
 
-### Paso 1.4: Crear Tablas de Base de Datos
+### Paso 1.5: Agregar Credenciales a gradle.properties
+
+Edita el archivo `gradle.properties` que creaste:
+
+```properties
+# Reemplaza estos valores con tus credenciales reales
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**⚠️ NO subas este archivo a git** - Ya está en `.gitignore`
+
+### Paso 1.6: Crear Tablas de Base de Datos
 
 1. En el dashboard, ve a **SQL Editor** (icono de código a la izquierda)
 2. Click en **"New Query"**
@@ -50,29 +73,28 @@ Sigue esta guía **EXACTAMENTE** para configurar tu app.
 
 ---
 
-## 📌 PARTE 2: Configurar OneSignal
+## 📌 PARTE 2: Configurar Firebase para Notificaciones (Opcional)
 
-### Paso 2.1: Crear Cuenta
+### Paso 2.1: Crear Proyecto Firebase
 
-1. Ve a https://onesignal.com
-2. Click en **"Sign Up"**
-3. Regístrate con email
+**⚠️ Solo si necesitas notificaciones push**
 
-### Paso 2.2: Crear App
+1. Ve a https://console.firebase.google.com
+2. Click en **"Agregar proyecto"** o usa uno existente
+3. Sigue los pasos de configuración
 
-1. Click en **"Add App"** o **"Create App"**
-2. Elige **"Android"** como plataforma
-3. Pon un nombre: `Message App`
-4. Click en **"Next"**
+### Paso 2.2: Registrar App Android
 
-### Paso 2.3: Obtener Credenciales
+1. Click en **"Agregar app"** → ícono de Android
+2. Ingresa el package name: `com.example.messageapp`
+3. Registra la app
 
-1. En la página de configuración de la app:
-   - Copia el **App ID** (cadena UUID)
-   - Ve a **Settings** → **Keys & IDs**
-   - Copia el **REST API Key**
+### Paso 2.3: Descargar google-services.json
 
-**Nota:** La REST API Key se usa en el servidor (Edge Function), no en la app móvil.
+1. Descarga el archivo `google-services.json`
+2. Colócalo en: `app/google-services.json`
+
+**⚠️ IMPORTANTE:** Este archivo NO está en git por seguridad. Cada desarrollador debe generar el suyo.
 
 ---
 
@@ -82,33 +104,15 @@ Sigue esta guía **EXACTAMENTE** para configurar tu app.
 
 1. Abre Android Studio
 2. **File → Open**
-3. Selecciona la carpeta `mensaje_app_supabase`
+3. Selecciona la carpeta del proyecto
 4. Espera a que Gradle sincronice (puede tardar 5-10 minutos la primera vez)
+5. ⚠️ **Si el build falla**, verifica que `gradle.properties` tenga credenciales válidas
 
-### Paso 3.2: Editar SupabaseConfig.kt
-
-1. Navega a: `app/src/main/java/com/example/messageapp/supabase/SupabaseConfig.kt`
-2. Reemplaza los valores:
-
-```kotlin
-// ANTES (valores por defecto):
-const val SUPABASE_URL = "https://TU_PROYECTO.supabase.co"
-const val SUPABASE_ANON_KEY = "TU_ANON_KEY_AQUI"
-const val ONESIGNAL_APP_ID = "TU_ONESIGNAL_APP_ID_AQUI"
-
-// DESPUÉS (tus valores reales):
-const val SUPABASE_URL = "https://abc123.supabase.co"
-const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-const val ONESIGNAL_APP_ID = "12345678-1234-1234-1234-123456789012"
-```
-
-3. **Guarda** el archivo (Ctrl+S)
-
-### Paso 3.3: Verificar build.gradle.kts
+### Paso 3.2: Verificar Build Configuration
 
 1. Abre `app/build.gradle.kts`
-2. Verifica que tenga las dependencias de Supabase y OneSignal
-3. Si hiciste cambios, Gradle sincronizará automáticamente
+2. Verifica que tenga las dependencias de Supabase y Firebase
+3. Si hiciste cambios a `gradle.properties`, Gradle sincronizará automáticamente
 
 ---
 
@@ -145,14 +149,14 @@ const val ONESIGNAL_APP_ID = "12345678-1234-1234-1234-123456789012"
 
 ## 📌 PARTE 5: Solución de Problemas
 
-### Error: "Invalid API key" o "Unauthorized"
+### Error: "SUPABASE_URL no está configurada" o "SUPABASE_ANON_KEY no está configurada"
 
-**Causa:** Credenciales incorrectas en `SupabaseConfig.kt`
+**Causa:** Credenciales faltantes en `gradle.properties`
 
 **Solución:**
-1. Verifica que copiaste correctamente las credenciales
-2. Asegúrate de que no hay espacios extra
-3. Reinicia la app
+1. Copia `gradle.properties.example` a `gradle.properties`
+2. Agrega tus credenciales de Supabase
+3. Vuelve a hacer build
 
 ### Error: "Table does not exist"
 
@@ -163,14 +167,15 @@ const val ONESIGNAL_APP_ID = "12345678-1234-1234-1234-123456789012"
 2. Ejecuta el script completo
 3. Reinicia la app
 
-### OneSignal no envía notificaciones
+### Error: "google-services.json missing"
 
-**Causa:** App ID incorrecto o permisos faltantes
+**Causa:** Firebase no configurado (opcional)
 
 **Solución:**
-1. Verifica `ONESIGNAL_APP_ID` en `SupabaseConfig.kt`
-2. En Android 13+, concede permiso de notificaciones
-3. Revisa logs con `adb logcat | grep OneSignal`
+1. Si necesitas notificaciones push, configura Firebase
+2. Descarga `google-services.json` desde Firebase Console
+3. Colócalo en `app/`
+4. Si NO necesitas notificaciones, ignora este error
 
 ### Error de compilación: "Unresolved reference"
 
@@ -196,7 +201,7 @@ Una vez que la app funcione:
    - Envía mensajes entre ellas
    - Verifica que se cifran/descifran
 
-3. ✅ **Prueba notificaciones:**
+3. ✅ **Prueba notificaciones (si configuraste FCM):**
    - Cierra la app en un dispositivo
    - Envía mensaje desde el otro
    - Deberías recibir notificación push
@@ -207,10 +212,12 @@ Una vez que la app funcione:
 
 Revisa:
 - `README.md` - Documentación general
-- `supabase_config.env` - Template de configuración
+- `SECURITY_GUIDE.md` - Guía de seguridad
 - Logs de Android Studio (`Logcat`)
 - Dashboard de Supabase (errores de base de datos)
 
 ---
 
 **¡Buena suerte! 🚀💕**
+
+**Última actualización:** 2026-04-04

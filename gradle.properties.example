@@ -18,10 +18,10 @@
 # 4. Copia los valores:
 
 # URL del proyecto (ej: https://abcdefgh.supabase.co)
-SUPABASE_URL=https://h-2_uEBOtaXgANRmUTMsdQ.supabase.co
+SUPABASE_URL=TU_SUPABASE_URL_AQUI
 
 # Anon/Public Key (comienza con "sb_publishable_")
-SUPABASE_ANON_KEY=sb_publishable_H-2_uEBOtaXgANRmUTMsdQ_qcTjP-WH
+SUPABASE_ANON_KEY=TU_SUPABASE_ANON_KEY_AQUI
 
 # --------------------------------------------
 # JPUSH CONFIGURATION

@@ -1,55 +1,70 @@
 # 🔐 SECURITY GUIDE - Message App
 
-**Fecha:** 2026-03-26  
-**Estado:** ✅ Credenciales aseguradas
+**Fecha:** 2026-04-04
+**Estado:** ✅ Credenciales aseguradas + Firebase seguro
 
 ---
 
 ## ✅ CREDENTIALS SECURITY - COMPLETADO
 
-### Problema Resuelto
-Las credenciales de Supabase y JPush estaban hardcodeadas en el código fuente, lo que representa un riesgo de seguridad crítico.
+### Problemas Resueltos
+
+1. ✅ **Supabase**: Credenciales validadas en build time
+2. ✅ **Firebase**: google-services.json removido de git
+3. ✅ **Build**: Falla temprano si faltan credenciales
 
 ### Solución Implementada
 
-#### 1. BuildConfig para Credenciales
+#### 1. BuildConfig para Credenciales con Validación
 **Archivo:** `app/build.gradle.kts`
 
 ```kotlin
-// Las credenciales se cargan desde gradle.properties
-buildConfigField("String", "SUPABASE_URL", "\"${project.findProperty("SUPABASE_URL") ?: ""}\"")
-buildConfigField("String", "SUPABASE_ANON_KEY", "\"${project.findProperty("SUPABASE_ANON_KEY") ?: ""}\"")
-buildConfigField("String", "JPUSH_APP_KEY", "\"$jpushAppKey\"")
+// Validación en build time - FALLA si no hay credenciales
+val supabaseUrl = project.findProperty("SUPABASE_URL") as String?
+val supabaseKey = project.findProperty("SUPABASE_ANON_KEY") as String?
+
+if (supabaseUrl.isNullOrBlank()) {
+    throw GradleException("SUPABASE_URL no está configurada...")
+}
+
+if (supabaseKey.isNullOrBlank()) {
+    throw GradleException("SUPABASE_ANON_KEY no está configurada...")
+}
+
+buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseKey\"")
 ```
 
-#### 2. SupabaseConfig Usa BuildConfig
+#### 2. SupabaseConfig Usa BuildConfig con Validación Runtime
 **Archivo:** `app/src/main/java/com/example/messageapp/supabase/SupabaseConfig.kt`
 
 ```kotlin
-import com.example.messageapp.BuildConfig
+val client by lazy {
+    val url = BuildConfig.SUPABASE_URL
+    val key = BuildConfig.SUPABASE_ANON_KEY
 
-object SupabaseConfig {
-    const val SUPABASE_URL = BuildConfig.SUPABASE_URL
-    const val SUPABASE_ANON_KEY = BuildConfig.SUPABASE_ANON_KEY
-    const val JPUSH_APP_KEY = BuildConfig.JPUSH_APP_KEY
+    if (url.isBlank() || key.isBlank()) {
+        error("Supabase credentials cannot be empty")
+    }
+
+    createSupabaseClient(supabaseUrl = url, supabaseKey = key) { ... }
 }
 ```
 
-#### 3. gradle.properties.example
-**Archivo:** `gradle.properties.example`
+#### 3. Firebase/FCM Seguro
+**Archivo:** `app/google-services.json` → **REMUEV** de git
 
-```properties
-# Plantilla para desarrolladores
-SUPABASE_URL=https://tu-proyecto.supabase.co
-SUPABASE_ANON_KEY=sb_publishable_TU_KEY_AQUI
-JPUSH_APP_KEY=TU_JPUSH_APP_KEY_AQUI
+```bash
+# Remover del repositorio
+git rm --cached app/google-services.json
+
+# Agregar al .gitignore
+echo "google-services.json" >> .gitignore
 ```
 
-#### 4. .gitignore Actualizado
-```gitignore
-# Secret keys (IMPORTANT!)
-**/gradle.properties
-```
+**Archivo:** `app/google-services.json.example` → **PLACEHOLDER** para devs
+
+Cada desarrollador debe generar su propio `google-services.json` desde Firebase Console si necesita FCM.
 
 ---
 
@@ -57,19 +72,22 @@ JPUSH_APP_KEY=TU_JPUSH_APP_KEY_AQUI
 
 ### Primer Setup
 
-1. **Copiar plantilla:**
+1. **Copiar y configurar credenciales:**
 ```bash
 cp gradle.properties.example gradle.properties
+# Editar gradle.properties con tus credenciales reales
 ```
 
-2. **Editar con credenciales reales:**
-```properties
-SUPABASE_URL=https://tu-proyecto.supabase.co
-SUPABASE_ANON_KEY=sb_publishable_TU_KEY_AQUI
-JPUSH_APP_KEY=TU_JPUSH_APP_KEY_AQUI
+2. **Configurar Firebase para FCM (opcional):**
+```bash
+# Si necesitas notificaciones push:
+cp app/google-services.json.example app/google-services.json
+# Editar con tus credenciales desde Firebase Console
 ```
 
-3. **Nunca commitear `gradle.properties`** - Ya está en `.gitignore`
+3. **Nunca commitear archivos con credenciales:**
+- `gradle.properties` → ✅ En .gitignore
+- `google-services.json` → ✅ En .gitignore
 
 ---
 
@@ -77,9 +95,12 @@ JPUSH_APP_KEY=TU_JPUSH_APP_KEY_AQUI
 
 ### ✅ Implementado
 - [x] Credenciales en BuildConfig (no en código)
+- [x] Validación de credenciales en build time (FALLA temprano)
 - [x] gradle.properties en .gitignore
+- [x] google-services.json en .gitignore
 - [x] Plantilla .example para desarrolladores
 - [x] Tags constantes para logging (no exponen datos)
+- [x] SupabaseConfig valida credenciales en runtime
 
 ### ⏳ Pendiente
 - [ ] Certificate pinning para Supabase

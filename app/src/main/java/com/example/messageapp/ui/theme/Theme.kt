@@ -56,3 +56,36 @@ fun MessageAppTheme(
         content = content
     )
 }
+
+/**
+ * Tema romántico con colores personalizados
+ *
+ * Usa los colores Rosa Chanchita y Gris Koala definidos en Color.kt
+ */
+@Composable
+fun RomanticTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val colorScheme = if (darkTheme) {
+        darkColorScheme(
+            primary = RosaChanchitaDark,
+            secondary = RosaChanchita,
+            background = GrisKoalaLight,
+            surface = BlancoHumo
+        )
+    } else {
+        lightColorScheme(
+            primary = RosaChanchita,
+            secondary = RosaChanchitaDark,
+            background = BlancoHumo,
+            surface = BlancoHumo
+        )
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography,
+        content = content
+    )
+}

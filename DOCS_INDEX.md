@@ -1,7 +1,7 @@
 # 📚 Message App - Documentation Index
 
-**Última Actualización:** 2026-03-28  
-**Estado del Proyecto:** ✅ **LISTO PARA PRODUCCIÓN**
+**Última Actualización:** 2026-04-04
+**Estado del Proyecto:** 🚧 **EN DESARROLLO** - Correcciones críticas aplicadas
 
 ---
 
@@ -11,18 +11,20 @@
 App de mensajería para Android con cifrado E2E, chat en tiempo real y notificaciones push.
 
 **Stack Técnico:**
-- Kotlin 1.9.0 + Jetpack Compose
-- Supabase 2.1.0 (Auth + PostgREST + Realtime)
+- Kotlin 1.9.22 + Jetpack Compose
+- Supabase 3.4.1 (Auth + PostgREST + Realtime + Storage)
+- Ktor 3.3.0 (HTTP client)
 - Room 2.6.1 (Base de datos local)
-- Hilt 2.48 (Inyección de dependencias)
+- Firebase Cloud Messaging (Notificaciones push)
 - Android Keystore AES-256-GCM (Cifrado E2E)
 
 **Estado Actual:**
-- ✅ 0 errores críticos pendientes
-- ✅ 100% validación de parámetros
-- ✅ 100% manejo de nulls
-- ✅ 100% logging consistente
-- ✅ 72% test coverage (objetivo: 80%)
+- ✅ SupabaseConfig.kt creado
+- ✅ Ktor actualizado a 3.x
+- ✅ Imports corregidos
+- ✅ Validación de build implementada
+- ✅ Credenciales protegidas
+- ⚠️ 72% test coverage (objetivo: 80%)
 
 ---
 
@@ -63,21 +65,24 @@ Message-App/
 
 1. **[README.md](README.md)** - ⭐ **EMPIEZA AQUÍ**
    - Visión general del proyecto
-   - Configuración rápida (5 minutos)
+   - Configuración rápida (10 minutos)
    - Estado actual y métricas
    - Features principales
 
-2. **[specs/functional.md](specs/functional.md)** - Qué hace la app
-   - User stories activas (US-001 a US-008)
-   - Criterios de aceptación
-   - Casos de error conocidos
-   - Cambios recientes (2026-03-28)
+2. **[QUICK_START.md](QUICK_START.md)** - ⭐ **SETUP RÁPIDO**
+   - Pasos mínimos para empezar
+   - Configuración de credenciales
+   - Comandos esenciales
 
-3. **[specs/technical.md](specs/technical.md)** - Cómo está construida
-   - Arquitectura MVVM + Clean
-   - Stack técnico detallado
-   - Estructura de paquetes
-   - Decisiones de diseño
+3. **[CONFIGURATION_GUIDE.md](CONFIGURATION_GUIDE.md)** - Configuración detallada
+   - Setup paso a paso
+   - Supabase + Firebase FCM
+   - Solución de problemas
+
+4. **[SECURITY_GUIDE.md](SECURITY_GUIDE.md)** - ⭐ **SEGURIDAD**
+   - Protección de credenciales
+   - Validación en build time
+   - Best practices
 
 ### Para Desarrollo Diario
 
@@ -264,10 +269,12 @@ Message-App/
 
 | Error | Solución | Archivo |
 |-------|----------|---------|
-| "Unresolved reference: Supabase" | Verifica imports en specs/technical.md | specs/technical.md |
-| Tests fallan sin razón | Revisa ADR-008: Configuración estricta | context/decisions.md |
-| JPush no existe | Ver ADR-010: JPush comentado | context/decisions.md |
-| Dudas de arquitectura | Revisar ADRs 001-011 | context/decisions.md |
+| "SUPABASE_URL no está configurada" | Copia gradle.properties.example | gradle.properties.example |
+| "Supabase credentials cannot be empty" | Agrega credenciales válidas | gradle.properties |
+| "Table does not exist" | Ejecuta database_schema.sql | database_schema.sql |
+| "google-services.json missing" | Configura Firebase (opcional) | CONFIGURATION_GUIDE.md |
+| Tests fallan sin razón | Revisa configuración de tests | app/build.gradle.kts |
+| Dudas de arquitectura | Revisar TECHNICAL_SPECS.md | TECHNICAL_SPECS.md |
 
 ---
 
@@ -314,7 +321,7 @@ Message-App/
 
 ---
 
-**Última Actualización:** 2026-03-28  
-**Próxima Revisión:** 2026-04-04  
-**Responsable:** Todo el equipo  
-**Estado:** ✅ **LISTO PARA PRODUCCIÓN**
+**Última Actualización:** 2026-04-04
+**Próxima Revisión:** 2026-04-11
+**Responsable:** Todo el equipo
+**Estado:** 🚧 **EN DESARROLLO** - Correcciones críticas aplicadas

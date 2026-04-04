@@ -2,7 +2,20 @@
 
 ## ⚡ Configuración en 10 Minutos
 
-### Paso 1: Supabase (3 minutos)
+### Paso 1: Configurar Credenciales (2 minutos)
+
+**⚠️ IMPORTANTE:** Las credenciales se cargan desde `gradle.properties`, NO desde código Kotlin.
+
+```bash
+# En la raíz del proyecto:
+cp gradle.properties.example gradle.properties
+```
+
+Ahora edita `gradle.properties` con tus credenciales reales.
+
+---
+
+### Paso 2: Supabase - Crear Proyecto (3 minutos)
 
 1. **Crear proyecto:**
    - Ve a https://supabase.com
@@ -20,9 +33,15 @@
      - `Project URL`: `https://xxxxx.supabase.co`
      - `anon/public key`: `eyJhbGc...`
 
+3. **Agregar a gradle.properties:**
+```properties
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_ANON_KEY=eyJhbGc...
+```
+
 ---
 
-### Paso 2: Ejecutar SQL en Supabase (2 minutos)
+### Paso 3: Ejecutar SQL en Supabase (2 minutos)
 
 1. Ve a **SQL Editor** (icono de código)
 2. Click **"New Query"**
@@ -34,59 +53,38 @@
 
 ---
 
-### Paso 3: OneSignal (2 minutos)
+### Paso 4: Configurar FCM para Notificaciones (Opcional, 2 minutos)
 
-1. **Crear cuenta:**
-   - Ve a https://onesignal.com
-   - Click "Sign Up"
-   - Usa email (no Google)
+**Solo si necesitas notificaciones push:**
 
-2. **Crear app:**
-   - Click "New App"
-   - Nombre: `Message App`
-   - Plataforma: `Android`
-   - Copia el **App ID**
+1. Ve a https://console.firebase.google.com
+2. Crea proyecto o usa uno existente
+3. Agrega app Android con package name: `com.example.messageapp`
+4. Descarga `google-services.json`
+5. Colócalo en: `app/google-services.json`
 
----
-
-### Paso 4: Configurar la App (2 minutos)
-
-1. Abre Android Studio
-2. Abre el proyecto `mensaje_app_supabase`
-3. Navega a: `app/src/main/java/com/example/messageapp/supabase/SupabaseConfig.kt`
-4. Reemplaza los valores:
-
-```kotlin
-// LÍNEA 27 - Reemplaza con tu Project URL
-const val SUPABASE_URL = "https://tu-proyecto.supabase.co"
-
-// LÍNEA 28 - Reemplaza con tu anon key
-const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-
-// LÍNEA 40 - Reemplaza con tu App ID de OneSignal
-const val ONESIGNAL_APP_ID = "12345678-1234-1234-1234-123456789012"
-```
-
-5. **Guarda** el archivo (Ctrl+S)
+**Nota:** Este archivo NO está en git por seguridad.
 
 ---
 
 ### Paso 5: Build y Test (1 minuto)
 
-1. **Gradle Sync:**
+1. **Abre Android Studio**
+2. **Abre el proyecto**
+3. **Gradle Sync:**
    - Android Studio debería sincronizar automáticamente
    - Si no: File → Sync Project with Gradle Files
-   - Espera a que termine (puede tardar 2-5 minutos la primera vez)
+   - Espera a que termine (2-5 minutos la primera vez)
 
-2. **Build:**
+4. **Build:**
    - Build → Make Project
-   - Espera 2-3 minutos
+   - ⚠️ **Si el build falla**, verifica que `gradle.properties` tenga credenciales válidas
 
-3. **Run:**
+5. **Run:**
    - Conecta tu dispositivo Android o inicia emulador
    - Click en Run (triángulo verde) o Shift+F10
 
-4. **Prueba:**
+6. **Prueba:**
    - Click en "Crear cuenta" o "Registro"
    - Ingresa email y contraseña
    - Click en "Registrar"
@@ -106,20 +104,32 @@ const val ONESIGNAL_APP_ID = "12345678-1234-1234-1234-123456789012"
 
 1. Abre **Logcat** en Android Studio
 2. Filtra por: `SupabaseConfig`
-3. ✅ Deberías ver mensajes de conexión exitosa
+3. ✅ Deberías ver mensajes de inicialización exitosa
 
 ---
 
 ## 🔧 Solución de Problemas
 
-### Error: "Invalid API key"
+### Error: "SUPABASE_URL no está configurada"
 
-**Causa:** Credenciales incorrectas
+**Causa:** No copiaste o editaste `gradle.properties`
 
 **Solución:**
-1. Verifica que copiaste correctamente las credenciales
-2. Asegúrate de que no hay espacios extra
-3. Reinicia la app
+```bash
+cp gradle.properties.example gradle.properties
+# Editar gradle.properties con credenciales reales
+```
+
+---
+
+### Error: "Supabase credentials cannot be empty"
+
+**Causa:** Credenciales vacías en `gradle.properties`
+
+**Solución:**
+1. Abre `gradle.properties`
+2. Verifica que `SUPABASE_URL` y `SUPABASE_ANON_KEY` tengan valores válidos
+3. Asegúrate de que no hay espacios extra
 
 ---
 
@@ -134,7 +144,7 @@ const val ONESIGNAL_APP_ID = "12345678-1234-1234-1234-123456789012"
 
 ---
 
-### Error: "Unresolved reference: io.github.jan.supabase"
+### Error: "Unresolved reference: io.github.jan-tennert.supabase"
 
 **Causa:** Gradle no descargó las dependencias
 
@@ -145,20 +155,21 @@ const val ONESIGNAL_APP_ID = "12345678-1234-1234-1234-123456789012"
 
 ---
 
-### OneSignal no funciona
+### Error: "google-services.json missing"
 
-**Causa:** App ID incorrecto o permisos faltantes
+**Causa:** Firebase no configurado (opcional)
 
 **Solución:**
-1. Verifica `ONESIGNAL_APP_ID` en SupabaseConfig.kt
-2. En Android 13+, concede permiso de notificaciones cuando la app lo pida
-3. Revisa logs: `adb logcat | grep OneSignal`
+1. Si necesitas notificaciones push, configura Firebase
+2. Descarga `google-services.json` desde Firebase Console
+3. Colócalo en `app/google-services.json`
+4. Si NO necesitas notificaciones, ignora este error
 
 ---
 
 ## 📞 ¿Necesitas Ayuda?
 
-1. **Revisa:** `ERRORS_AND_FIXES.md` - Lista completa de errores corregidos
+1. **Revisa:** `SECURITY_GUIDE.md` - Guía de seguridad actualizada
 2. **Revisa:** `README.md` - Documentación completa
 3. **Logs:** `adb logcat | grep -i supabase`
 4. **Dashboard:** Verifica en Supabase Dashboard → Table Editor
@@ -169,13 +180,12 @@ const val ONESIGNAL_APP_ID = "12345678-1234-1234-1234-123456789012"
 
 Antes de empezar, verifica:
 
+- [ ] Copiaste `gradle.properties.example` a `gradle.properties`
 - [ ] Tienes cuenta en Supabase
 - [ ] Creaste proyecto en Supabase
-- [ ] Copiaste Project URL y anon key
+- [ ] Copiaste Project URL y anon key a `gradle.properties`
 - [ ] Ejecutaste database_schema.sql
-- [ ] Tienes cuenta en OneSignal
-- [ ] Copiaste App ID de OneSignal
-- [ ] Editaste SupabaseConfig.kt con las credenciales
+- [ ] (Opcional) Configuraste Firebase para FCM
 - [ ] Gradle sincronizó sin errores
 - [ ] Build completó sin errores
 - [ ] La app se ejecuta en el dispositivo
@@ -190,7 +200,7 @@ Si todo funciona:
 ✅ Los usuarios pueden registrarse
 ✅ Los chats funcionan en tiempo real
 ✅ Los mensajes se cifran con Android Keystore
-✅ OneSignal está configurado para notificaciones
+✅ FCM está configurado para notificaciones (si configuraste Firebase)
 
 **Siguiente paso:** Añadir features románticos 💕
 
