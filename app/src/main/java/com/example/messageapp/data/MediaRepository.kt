@@ -3,6 +3,7 @@ package com.example.messageapp.data
 import android.net.Uri
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
+import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

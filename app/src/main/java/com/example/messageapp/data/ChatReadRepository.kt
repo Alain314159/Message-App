@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 
 // ✅ TAG constante para logging
 private const val TAG = "MessageApp"
@@ -111,7 +112,7 @@ class ChatReadRepository {
         val channel = realtime.channel("chats:public:chats")
 
         // Flujo de cambios de PostgREST
-        val changeFlow = channel.postgresChangeFlow<Chat>(schema = "public") {
+        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "chats"
         }
 
@@ -166,7 +167,7 @@ class ChatReadRepository {
         // Suscribirse a cambios en este chat específico
         val channel = realtime.channel("chats:public:chats")
 
-        val changeFlow = channel.postgresChangeFlow<Chat>(schema = "public") {
+        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "chats"
         }
 
@@ -177,10 +178,18 @@ class ChatReadRepository {
 
         // Escuchar cambios y recargar cuando haya actualizaciones
         val job = launch {
-            changeFlow.collect { changedChat ->
-                if (changedChat.id == chatId) {
-                    Log.d(TAG, "ChatReadRepository: Chat $chatId updated, emitting new state")
-                    trySend(changedChat)
+            changeFlow.collect { action ->
+                val recordJson = when (action) {
+                    is PostgresAction.Insert, is PostgresAction.Update, is PostgresAction.Select -> action.record
+                    is PostgresAction.Delete -> action.oldRecord
+                    else -> null
+                }
+                if (recordJson != null) {
+                    val changedChat = Json.decodeFromJsonElement<Chat>(recordJson)
+                    if (changedChat.id == chatId) {
+                        Log.d(TAG, "ChatReadRepository: Chat $chatId updated, emitting new state")
+                        trySend(changedChat)
+                    }
                 }
             }
         }

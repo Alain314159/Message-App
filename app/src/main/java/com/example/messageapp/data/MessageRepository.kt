@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 
 // ✅ TAG constante para logging
 private const val TAG = "MessageApp"
@@ -61,7 +62,7 @@ class MessageRepository {
         val channel = realtime.channel("messages:public:messages")
 
         // Flujo de cambios para INSERT/UPDATE/DELETE
-        val changeFlow = channel.postgresChangeFlow<Message>(schema = "public") {
+        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "messages"
         }
 
@@ -72,14 +73,26 @@ class MessageRepository {
 
         // Escuchar cambios
         val job = launch {
-            changeFlow.collect { message ->
-                if (message.chatId == chatId) {
-                    // Recargar mensajes
-                    val messages = loadMessages(chatId)
-                    trySend(messages)
-                    // Marcar como entregado automáticamente si no soy el remitente
-                    if (message.senderId != myUid) {
-                        markDelivered(chatId, message.id, myUid)
+            changeFlow.collect { action ->
+                val recordJson = when (action) {
+                    is PostgresAction.Insert -> action.record
+                    is PostgresAction.Update -> action.record
+                    is PostgresAction.Delete -> action.oldRecord
+                    is PostgresAction.Select -> action.record
+                    else -> null
+                }
+                if (recordJson != null) {
+                    try {
+                        val message = Json.decodeFromJsonElement<Message>(recordJson)
+                        if (message.chatId == chatId) {
+                            val messages = loadMessages(chatId)
+                            trySend(messages)
+                            if (message.senderId != myUid) {
+                                markDelivered(chatId, message.id, myUid)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "MessageRepository: Error processing message: ${e.message}", e)
                     }
                 }
             }

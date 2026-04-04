@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.SerializationException
 
 private const val TAG = "MessageApp"
@@ -105,15 +106,22 @@ class PresenceRepository {
             channel.subscribe()
 
             val job = kotlinx.coroutines.launch {
-                changeFlow.collect { chat ->
-                    if (chat.id == chatId) {
-                        // Determinar si la otra persona está escribiendo
-                        val isPartnerTyping = if (chat.memberIds.firstOrNull() == myUid) {
-                            chat.user2Typing ?: false
-                        } else {
-                            chat.user1Typing ?: false
+                changeFlow.collect { action ->
+                    val recordJson = when (action) {
+                        is PostgresAction.Insert, is PostgresAction.Update, is PostgresAction.Select -> action.record
+                        is PostgresAction.Delete -> action.oldRecord
+                        else -> null
+                    }
+                    if (recordJson != null) {
+                        val chat = Json.decodeFromJsonElement<Chat>(recordJson)
+                        if (chat.id == chatId) {
+                            val isPartnerTyping = if (chat.memberIds.firstOrNull() == myUid) {
+                                chat.user2Typing ?: false
+                            } else {
+                                chat.user1Typing ?: false
+                            }
+                            trySend(isPartnerTyping)
                         }
-                        trySend(isPartnerTyping)
                     }
                 }
             }
@@ -164,7 +172,7 @@ class PresenceRepository {
             val channel = realtime.channel("users:public:users")
 
             // Flujo de cambios
-            val changeFlow = channel.postgresChangeFlow<UserStatusResponse>(schema = "public") {
+            val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "users"
         }
 
@@ -172,9 +180,17 @@ class PresenceRepository {
             channel.subscribe()
 
             val job = kotlinx.coroutines.launch {
-                changeFlow.collect { userStatus ->
-                    if (userStatus.id == partnerId) {
-                        trySend(userStatus.isOnline)
+                changeFlow.collect { action ->
+                    val recordJson = when (action) {
+                        is PostgresAction.Insert, is PostgresAction.Update, is PostgresAction.Select -> action.record
+                        is PostgresAction.Delete -> action.oldRecord
+                        else -> null
+                    }
+                    if (recordJson != null) {
+                        val userStatus = Json.decodeFromJsonElement<UserStatusResponse>(recordJson)
+                        if (userStatus.id == partnerId) {
+                            trySend(userStatus.isOnline)
+                        }
                     }
                 }
             }
