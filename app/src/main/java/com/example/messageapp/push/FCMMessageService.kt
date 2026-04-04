@@ -3,8 +3,10 @@ package com.example.messageapp.push
 import android.util.Log
 import com.example.messageapp.data.FCMNotificationData
 import com.example.messageapp.data.FCMTokenRepository
+import com.example.messageapp.supabase.SupabaseConfig
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,35 +86,32 @@ class FCMMessageService : FirebaseMessagingService() {
      * Envía el token de registro al servidor (Supabase)
      *
      * El token se usa para enviar notificaciones push al dispositivo correcto.
-     * Se actualiza en la tabla 'users' de Supabase.
+     * Se actualiza en la tabla 'users' de Supabase en la columna 'jpush_registration_id'.
      */
     private fun sendRegistrationToServer(token: String) {
         serviceScope.launch {
             try {
-                Log.d(TAG, "Sending FCM token to server: ${token.take(10)}...")
+                Log.d(TAG, "Sending FCM token to Supabase: ${token.take(10)}...")
 
-                // TODO: Implementar actualización de token en Supabase
-                // Opciones:
-                // 1. Usar AuthRepository.updateFcmToken(token)
-                // 2. Llamar directamente a Supabase PostgREST
-                // 3. Usar un endpoint personalizado
-
-                // Ejemplo de implementación futura:
-                /*
+                // Obtener el ID del usuario actual
                 val userId = SupabaseConfig.client.auth.currentSessionOrNull()?.user?.id
+                
                 if (userId != null) {
+                    // Actualizar el token en la base de datos
                     SupabaseConfig.client.plugin(Postgrest)
                         .from("users")
-                        .update(mapOf("fcm_token" to token)) {
-                            eq("id", userId)
+                        .update(
+                            mapOf("jpush_registration_id" to token)
+                        ) {
+                            filter { eq("id", userId) }
                         }
-                    Log.d(TAG, "FCM token updated for user: $userId")
+                    
+                    Log.d(TAG, "✅ FCM token updated in Supabase for user: $userId")
+                } else {
+                    Log.w(TAG, "⚠️ No user logged in - cannot update FCM token")
                 }
-                */
-
-                Log.d(TAG, "FCM token sent to server successfully")
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to send FCM token to server", e)
+                Log.e(TAG, "❌ Failed to send FCM token to Supabase", e)
             }
         }
     }
