@@ -1,15 +1,23 @@
 package com.example.messageapp.ui.chatlist
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.example.messageapp.data.ChatRepository
@@ -100,10 +109,11 @@ fun ChatListScreen(params: ChatListScreenParams) {
             items(list, key = { it.id }) { c ->
                 // ✅ CORREGIDO: Eliminar métodos que no existen en ChatRepository
                 ChatRow(ChatRowParams(params.myUid, c, showHidden, { params.onOpenChat(c.id) },
-                    /* hideChatForUser */ null,
-                    /* unhideChatForUser */ null,
-                    /* leaveGroup */ null,
-                    /* deleteGroup */ null))
+                    /* hideChatForUser */ { },
+                    /* unhideChatForUser */ { },
+                    /* leaveGroup */ { },
+                    /* deleteGroup */ { },
+                    /* onDeleteGroup */ { }))
                 Divider()
             }
         }
@@ -183,10 +193,10 @@ private fun ChatRow(params: ChatRowParams) {
             trailingContent = {
                 androidx.compose.foundation.layout.Box {
                     androidx.compose.material3.IconButton(onClick = { menuOpen = true }) {
-                        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Default.MoreVert, contentDescription = "Mais opções")
+                        Icon(Icons.Default.MoreVert, contentDescription = "Mais opções")
                     }
                     // ✅ CORREGIDO: Eliminar parámetros que no se usan
-                    ChatRowMenu(ChatRowMenuParams(menuOpen, { menuOpen = false }, chat, myUid, params.isHiddenList, null, null, null, null, null))
+                    ChatRowMenu(ChatRowMenuParams(menuOpen, { menuOpen = false }, chat, myUid, params.isHiddenList, { }, { }, { }, { }, { }))
                 }
             },
             modifier = Modifier.clickable { params.onOpen() }
@@ -228,7 +238,7 @@ private fun ChatRowMenu(params: ChatRowMenuParams) {
         }
         if (params.chat.type == "group") {
             androidx.compose.material3.DropdownMenuItem(text = { Text("Sair do grupo") }, onClick = params.onLeave)
-            if (params.chat.ownerId == params.myUid) {
+            if (params.chat.memberIds.firstOrNull() == params.myUid) {
                 androidx.compose.material3.DropdownMenuItem(text = { Text("Apagar grupo para todos") }, onClick = params.onDeleteGroup)
             }
         }

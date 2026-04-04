@@ -13,11 +13,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,11 +39,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.messageapp.data.ChatRepository
 import com.example.messageapp.supabase.SupabaseConfig
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 
 // Tag constante para logging
@@ -65,13 +72,15 @@ fun GroupCreateScreen(
 ) {
     // ✅ CORREGIDO: Usar Supabase en lugar de Firebase
     val client = remember { SupabaseConfig.client }
-    val myUid = remember { client.auth.currentUserOrNull()?.id?.value.orEmpty() }
+    val auth = remember { client.auth }
+    val db = remember { client.postgrest }
+    val myUid = remember { auth.currentUserOrNull()?.id?.toString().orEmpty() }
     val repo = remember { ChatRepository() }
     val scope = rememberCoroutineScope()
 
     var name by remember { mutableStateOf("") }
     var users by remember { mutableStateOf(listOf<UserItem>()) }
-    val selected = remember { mutableStateListOf<String>() }
+    val selected: SnapshotStateList<String> = remember { mutableStateListOf<String>() }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     var msg by remember { mutableStateOf<String?>(null) }
     var creating by remember { mutableStateOf(false) }
@@ -81,15 +90,20 @@ fun GroupCreateScreen(
         if (myUid.isNotBlank() && !selected.contains(myUid)) selected += myUid
     }
 
-    // Carrega usuários (simples)
+    // Carrega usuarios (Supabase)
     LaunchedEffect(Unit) {
-        val qs = db.collection("users").get().await()
-        users = qs.documents.map { d ->
-            UserItem(
-                uid = d.id,
-                name = d.getString("displayName") ?: "@${d.id.take(6)}",
-                photo = d.getString("photoUrl")
-            )
+        try {
+            val result: List<Map<String, Any?>> = db.from("users").select().decodeList()
+            users = result.map { m ->
+                val uid = m["id"] as? String ?: ""
+                UserItem(
+                    uid = uid,
+                    name = (m["displayName"] as? String) ?: "@${uid.take(6)}",
+                    photo = m["photoUrl"] as? String
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading users", e)
         }
     }
 
@@ -202,25 +216,25 @@ private fun GroupCreateForm(
 @Composable
 private fun GroupCreateMemberList(
     users: List<UserItem>,
-    selected: List<String>,
+    selected: MutableList<String>,
     creating: Boolean
 ) {
     Text("Participantes", style = MaterialTheme.typography.titleMedium)
     LazyColumn(Modifier.weight(1f)) {
         items(users) { u ->
-            val checked = selected.contains(u.id)
+            val checked = selected.contains(u.uid)
             ListItem(
                 headlineContent = { Text(u.name) },
-                supportingContent = { Text("@${u.id.take(6)}") },
+                supportingContent = { Text("@${u.uid.take(6)}") },
                 leadingContent = {
                     Image(rememberAsyncImagePainter(u.photo), null, Modifier.size(40.dp))
                 },
                 trailingContent = {
                     Checkbox(
                         checked = checked,
-                        onCheckedChange = {
+                        onCheckedChange = { isChecked ->
                             if (creating) return@Checkbox
-                            if (it) selected.add(u.id) else selected.remove(u.id)
+                            if (isChecked) selected.add(u.uid) else selected.remove(u.uid)
                         }
                     )
                 }

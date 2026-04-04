@@ -2,8 +2,9 @@ package com.example.messageapp.data
 
 import com.example.messageapp.model.User
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -18,7 +19,7 @@ import kotlinx.coroutines.withContext
  */
 class PairingRepository {
     
-    private val db = SupabaseConfig.client.plugin(Postgrest)
+    private val db = SupabaseConfig.client.postgrest
     private val auth = SupabaseConfig.client.auth
     
     /**
@@ -130,14 +131,14 @@ class PairingRepository {
     
     /**
      * Envía solicitud de emparejamiento por email
-     * Usa JPush para notificar a la otra persona
-     * 
+     * Usa FCM para notificar a la otra persona
+     *
      * @param partnerId ID de la persona a la que enviar la solicitud
      * @return Result Unit o error
      */
     suspend fun requestPairing(partnerId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            // Note: requestPairing es stub - pendiente de implementar con Edge Function de Supabase o JPush
+            // Note: requestPairing es stub - pendiente de implementar con Edge Function de Supabase + FCM
             android.util.Log.w("PairingRepository", "sendPairingNotification: No implementado")
             // Por ahora solo retornamos éxito
             Result.success(Unit)

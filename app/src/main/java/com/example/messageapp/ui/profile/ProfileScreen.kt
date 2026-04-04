@@ -40,6 +40,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.messageapp.data.AuthRepository
 import com.example.messageapp.data.ProfileRepository
 import com.example.messageapp.supabase.SupabaseConfig
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
 
 // Tag constante para logging
@@ -54,13 +55,13 @@ fun ProfileScreen(
 ) {
     // ✅ CORREGIDO: Usar Supabase en lugar de Firebase
     val client = remember { SupabaseConfig.client }
-    val auth = client.auth
+    val auth = remember { client.auth }
     val scope = rememberCoroutineScope()
     val repo = remember { AuthRepository() }
     val profileRepo = remember { ProfileRepository() }
 
     // ✅ CORREGIDO: Obtener usuario actual de Supabase
-    val uid = auth.currentUserOrNull()?.id?.value ?: return
+    val uid = auth.currentUserOrNull()?.id?.toString() ?: return
 
     var name by remember { mutableStateOf("") }
     var bio  by remember { mutableStateOf("") }
@@ -84,9 +85,7 @@ fun ProfileScreen(
         if (uri != null) {
             scope.launch {
                 busy = true
-                runCatching {
-                    profileRepo.uploadAvatar(uri)
-                }.onSuccess { url ->
+                profileRepo.uploadAvatar(uri).onSuccess { url ->
                     photoUrl = url
                     msg = "Foto atualizada!"
                 }.onFailure { e ->

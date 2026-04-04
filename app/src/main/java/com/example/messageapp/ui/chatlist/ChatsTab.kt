@@ -21,12 +21,14 @@ data class ChatsTabParams(
 @Composable
 fun ChatsTab(params: ChatsTabParams) {
     ChatListScreen(
-        myUid = params.myUid,
-        vm = params.vm,
-        onOpenChat = params.onOpenChat,
-        onOpenContacts = params.onOpenContacts,
-        onOpenNewGroup = params.onOpenNewGroup,
-        onOpenProfile = params.onOpenProfile,
-        onLogout = params.onLogout
+        ChatListScreenParams(
+            myUid = params.myUid,
+            vm = params.vm,
+            onOpenChat = params.onOpenChat,
+            onOpenContacts = params.onOpenContacts,
+            onOpenNewGroup = params.onOpenNewGroup,
+            onOpenProfile = params.onOpenProfile,
+            onLogout = params.onLogout
+        )
     )
 }

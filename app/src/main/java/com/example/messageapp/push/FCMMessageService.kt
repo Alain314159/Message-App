@@ -86,7 +86,7 @@ class FCMMessageService : FirebaseMessagingService() {
      * Envía el token de registro al servidor (Supabase)
      *
      * El token se usa para enviar notificaciones push al dispositivo correcto.
-     * Se actualiza en la tabla 'users' de Supabase en la columna 'jpush_registration_id'.
+     * Se actualiza en la tabla 'users' de Supabase en la columna 'fcm_token'.
      */
     private fun sendRegistrationToServer(token: String) {
         serviceScope.launch {
@@ -95,13 +95,13 @@ class FCMMessageService : FirebaseMessagingService() {
 
                 // Obtener el ID del usuario actual
                 val userId = SupabaseConfig.client.auth.currentSessionOrNull()?.user?.id
-                
+
                 if (userId != null) {
                     // Actualizar el token en la base de datos
                     SupabaseConfig.client.plugin(Postgrest)
                         .from("users")
                         .update(
-                            mapOf("jpush_registration_id" to token)
+                            mapOf("fcm_token" to token)
                         ) {
                             filter { eq("id", userId) }
                         }

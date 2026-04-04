@@ -6,6 +6,7 @@ import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.CachePolicy
 import coil.util.DebugLogger
+import com.example.messageapp.BuildConfig
 
 /**
  * Configuración optimizada de Coil para caching de imágenes

@@ -4,8 +4,8 @@ import android.util.Log
 import android.util.Patterns
 import com.example.messageapp.model.User
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,8 +27,8 @@ private const val TAG = "MessageApp"
  */
 class AuthReadRepository {
 
-    private val auth = SupabaseConfig.client.plugin(Auth)
-    private val db = SupabaseConfig.client.plugin(Postgrest)
+    private val auth = SupabaseConfig.client.auth
+    private val db = SupabaseConfig.client.postgrest
 
     /**
      * Verifica si hay un usuario logueado

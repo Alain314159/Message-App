@@ -3,9 +3,10 @@ package com.example.messageapp.data
 import android.util.Log
 import com.example.messageapp.model.Chat
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
-import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -27,8 +28,8 @@ private const val TAG = "MessageApp"
  */
 class PresenceRepository {
 
-    private val db = SupabaseConfig.client.plugin(Postgrest)
-    private val realtime = SupabaseConfig.client.plugin(Realtime)
+    private val db = SupabaseConfig.client.postgrest
+    private val realtime = SupabaseConfig.client.realtime
     
     /**
      * Actualiza el estado de "escribiendo" en un chat
@@ -92,9 +93,7 @@ class PresenceRepository {
             val channel = realtime.channel("chats:public:chats")
 
             // Flujo de cambios
-            val changeFlow = channel.postgrestChangeFlow(schema = "public") {
-                table = "chats"
-            }
+            val changeFlow = channel.postgrestChangeFlow("public", "chats")
 
             // Suscribirse
             channel.subscribe()
@@ -169,9 +168,7 @@ class PresenceRepository {
             val channel = realtime.channel("users:public:users")
 
             // Flujo de cambios
-            val changeFlow = channel.postgrestChangeFlow(schema = "public") {
-                table = "users"
-            }
+            val changeFlow = channel.postgrestChangeFlow("public", "users")
 
             // Suscribirse
             channel.subscribe()

@@ -21,7 +21,7 @@ import androidx.room.PrimaryKey
  * - lastSeen: Timestamp de última vez visto
  * - isTyping: true si está escribiendo
  * - typingInChat: ID del chat donde está escribiendo
- * - jpushRegistrationId: ID de registro de JPush
+ * - fcmToken: Token de registro de FCM
  * - createdAt: Timestamp de creación
  * - updatedAt: Timestamp de última actualización
  * - synced: Boolean para tracking de sincronización
@@ -52,9 +52,9 @@ data class UserEntity(
     val isTyping: Boolean = false,
     
     val typingInChat: String? = null,
-    
-    val jpushRegistrationId: String? = null,
-    
+
+    val fcmToken: String? = null,
+
     val createdAt: Long,
     
     val updatedAt: Long,

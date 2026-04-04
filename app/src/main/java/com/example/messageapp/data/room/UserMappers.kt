@@ -24,7 +24,7 @@ fun User.toEntity(): UserEntity = UserEntity(
     lastSeen = lastSeen,
     isTyping = isTyping,
     typingInChat = typingInChat,
-    jpushRegistrationId = jpushRegistrationId,
+    fcmToken = fcmToken,
     createdAt = createdAt,
     updatedAt = updatedAt,
     synced = false
@@ -46,7 +46,7 @@ fun UserEntity.toDomain(): User = User(
     lastSeen = lastSeen,
     isTyping = isTyping,
     typingInChat = typingInChat,
-    jpushRegistrationId = jpushRegistrationId,
+    fcmToken = fcmToken,
     createdAt = createdAt,
     updatedAt = updatedAt
 )

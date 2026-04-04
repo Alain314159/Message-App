@@ -4,15 +4,16 @@ import android.content.Context
 import android.util.Log
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetGoogleIdOption
 import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.example.messageapp.crypto.E2ECipher
 import com.example.messageapp.supabase.SupabaseConfig
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.auth.providers.Email
-import io.github.jan.supabase.auth.providers.IDToken
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
@@ -38,8 +39,8 @@ class AuthWriteRepository(
     private val authReadRepository: AuthReadRepository = AuthReadRepository()
 ) {
 
-    private val auth = SupabaseConfig.client.plugin(Auth)
-    private val db = SupabaseConfig.client.plugin(Postgrest)
+    private val auth = SupabaseConfig.client.auth
+    private val db = SupabaseConfig.client.postgrest
 
     /**
      * Registro con email y password
@@ -57,10 +58,7 @@ class AuthWriteRepository(
             }
 
             // Registrar con Supabase
-            val authResult = auth.signUpWith(Email) {
-                this.email = email
-                this.password = password
-            }
+            val authResult = auth.signUpWith(Email(email, password))
 
             val uid = authResult.user?.id ?: return@withContext Result.failure(Exception("User ID is null"))
 
@@ -96,10 +94,7 @@ class AuthWriteRepository(
             }
 
             // Login con Supabase
-            auth.signInWith(Email) {
-                email = email
-                password = password
-            }
+            auth.signInWith(Email(email, password))
 
             val uid = auth.currentSessionOrNull()?.user?.id
                 ?: error("User ID not found after login")
@@ -123,10 +118,7 @@ class AuthWriteRepository(
             val tempPassword = java.util.UUID.randomUUID().toString()
 
             // Crear usuario anónimo
-            val authResult = auth.signUpWith(Email) {
-                email = tempEmail
-                password = tempPassword
-            }
+            val authResult = auth.signUpWith(Email(tempEmail, tempPassword))
 
             val uid = authResult.user?.id ?: error("User ID is null after anonymous sign up")
 
@@ -173,10 +165,7 @@ class AuthWriteRepository(
                 val idToken = googleIdTokenCredential.idToken
 
                 // Login con Supabase
-                auth.signInWith(IDToken) {
-                    provider = Google
-                    idToken = idToken
-                }
+                auth.signInWith(IDToken(Google, idToken))
 
                 val uid = auth.currentSessionOrNull()?.user?.id
                     ?: error("User ID not found after Google login")

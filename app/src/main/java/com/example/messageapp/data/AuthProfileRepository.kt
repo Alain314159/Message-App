@@ -2,8 +2,8 @@ package com.example.messageapp.data
 
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,19 +16,18 @@ private const val TAG = "MessageApp"
  *
  * Responsabilidad única: Gestión de PERFIL y presencia del usuario
  *
- * Funciones (4):
+ * Funciones (3):
  * 1. upsertUserProfile
  * 2. updatePresence
- * 3. updateJPushRegistrationId
- * 4. createUserProfile (privada, delega a AuthWriteRepository)
+ * 3. updateFCMToken
  */
 class AuthProfileRepository(
     private val authReadRepository: AuthReadRepository = AuthReadRepository(),
     private val authWriteRepository: AuthWriteRepository = AuthWriteRepository(authReadRepository)
 ) {
 
-    private val auth = SupabaseConfig.client.plugin(Auth)
-    private val db = SupabaseConfig.client.plugin(Postgrest)
+    private val auth = SupabaseConfig.client.auth
+    private val db = SupabaseConfig.client.postgrest
 
     /**
      * Actualiza o crea el perfil del usuario (idempotente)
@@ -87,23 +86,23 @@ class AuthProfileRepository(
     }
 
     /**
-     * Actualiza el JPush Registration ID para notificaciones push
+     * Actualiza el FCM Token para notificaciones push
      */
-    suspend fun updateJPushRegistrationId(registrationId: String) = withContext(Dispatchers.IO) {
+    suspend fun updateFCMToken(token: String) = withContext(Dispatchers.IO) {
         val uid = authReadRepository.getCurrentUserId() ?: return@withContext
 
         try {
             db.from("users").update(
                 mapOf(
-                    "jpush_registration_id" to registrationId,
+                    "fcm_token" to token,
                     "updated_at" to (System.currentTimeMillis() / 1000)
                 )
             ) {
                 filter { eq("id", uid) }
             }
-            Log.d(TAG, "AuthProfileRepository: JPush Registration ID actualizado: $registrationId")
+            Log.d(TAG, "AuthProfileRepository: FCM Token actualizado")
         } catch (e: Exception) {
-            Log.e(TAG, "AuthProfileRepository: Error updating JPush ID: ${e.message}", e)
+            Log.e(TAG, "AuthProfileRepository: Error updating FCM token: ${e.message}", e)
         }
     }
 }

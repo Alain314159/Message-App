@@ -4,8 +4,8 @@ import android.util.Log
 import com.example.messageapp.model.Message
 import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.utils.retryWithBackoff
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -32,8 +32,8 @@ private const val TAG = "MessageApp"
  */
 class MessageRepository {
 
-    private val db = SupabaseConfig.client.plugin(Postgrest)
-    private val realtime = SupabaseConfig.client.plugin(Realtime)
+    private val db = SupabaseConfig.client.postgrest
+    private val realtime = SupabaseConfig.client.realtime
 
     companion object {
         const val PAGE_SIZE = 50 // Número de mensajes por página
@@ -58,9 +58,7 @@ class MessageRepository {
         val channel = realtime.channel("messages:public:messages")
 
         // Flujo de cambios para INSERT/UPDATE/DELETE
-        val changeFlow = channel.postgrestChangeFlow(schema = "public") {
-            table = "messages"
-        }
+        val changeFlow = channel.postgrestChangeFlow("public", "messages")
 
         // Suscribirse al canal
         launch {

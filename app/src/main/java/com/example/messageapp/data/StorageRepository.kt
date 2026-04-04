@@ -4,8 +4,8 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -36,8 +36,8 @@ class StorageRepository @Inject constructor(
     @android.content.Context.ApplicationContext private val context: Context
 ) {
 
-    private val db = SupabaseConfig.client.plugin(Postgrest)
-    private val storage = SupabaseConfig.client.plugin(Storage)
+    private val db = SupabaseConfig.client.postgrest
+    private val storage = SupabaseConfig.client.storage
 
     /**
      * Envía multimedia (imagen/video/audio) a un chat

@@ -4,12 +4,16 @@ import android.util.Log
 import com.example.messageapp.model.Chat
 import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.utils.retryWithBackoff
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.realtime.realtime
+import io.github.jan.supabase.realtime.v2.channelV2
+import io.github.jan.supabase.realtime.v2.postgrestChangeFlow
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 // ✅ TAG constante para logging
@@ -29,8 +33,8 @@ private const val TAG = "MessageApp"
  */
 class ChatReadRepository {
 
-    private val db = SupabaseConfig.client.plugin(Postgrest)
-    private val realtime = SupabaseConfig.client.plugin(Realtime)
+    private val db = SupabaseConfig.client.postgrest
+    private val realtime = SupabaseConfig.client.realtime
 
     /**
      * Genera un ID único para chat directo entre 2 usuarios
@@ -105,12 +109,10 @@ class ChatReadRepository {
      * Observa la lista de chats del usuario en tiempo real
      */
     fun observeChats(uid: String): Flow<List<Chat>> = callbackFlow {
-        val channel = realtime.channel("chats:public:chats")
+        val channel = realtime.channelV2("public", "chats")
 
         // Flujo de cambios de PostgREST
-        val changeFlow = channel.postgrestChangeFlow(schema = "public") {
-            table = "chats"
-        }
+        val changeFlow = channel.postgrestChangeFlow<Chat>()
 
         // Suscribirse al canal
         channel.subscribe()
@@ -161,11 +163,9 @@ class ChatReadRepository {
         }
 
         // Suscribirse a cambios en este chat específico
-        val channel = realtime.channel("chats:public:chats")
+        val channel = realtime.channelV2("public", "chats")
 
-        val changeFlow = channel.postgrestChangeFlow(schema = "public") {
-            table = "chats"
-        }
+        val changeFlow = channel.postgrestChangeFlow<Chat>()
 
         // Suscribirse al canal
         launch {
@@ -174,20 +174,10 @@ class ChatReadRepository {
 
         // Escuchar cambios y recargar cuando haya actualizaciones
         val job = launch {
-            changeFlow.collect { change ->
-                try {
-                    val recordJson = change.record
-                    if (recordJson != null) {
-                        val changedChat = kotlinx.serialization.json.Json.decodeFromJsonElement<Chat>(recordJson)
-                        if (changedChat.id == chatId) {
-                            Log.d(TAG, "ChatReadRepository: Chat $chatId updated, emitting new state")
-                            trySend(changedChat)
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "ChatReadRepository: Error processing chat change", e)
-                    // Recargar completo en caso de error
-                    trySend(loadChat(chatId))
+            changeFlow.collect { changedChat ->
+                if (changedChat.id == chatId) {
+                    Log.d(TAG, "ChatReadRepository: Chat $chatId updated, emitting new state")
+                    trySend(changedChat)
                 }
             }
         }

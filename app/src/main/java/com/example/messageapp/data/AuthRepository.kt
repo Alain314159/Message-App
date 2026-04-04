@@ -65,6 +65,6 @@ class AuthRepository(
     suspend fun updatePresence(online: Boolean) =
         authProfileRepository.updatePresence(online)
 
-    suspend fun updateJPushRegistrationId(registrationId: String) =
-        authProfileRepository.updateJPushRegistrationId(registrationId)
+    suspend fun updateFCMToken(token: String) =
+        authProfileRepository.updateFCMToken(token)
 }

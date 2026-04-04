@@ -4,8 +4,8 @@ import android.content.ContentResolver
 import android.provider.ContactsContract
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
@@ -17,7 +17,7 @@ private const val TAG = "MessageApp.ContactsRepository"
  */
 class ContactsRepository {
 
-    private val db = SupabaseConfig.client.plugin(Postgrest)
+    private val db = SupabaseConfig.client.postgrest
 
     /**
      * Agrega un contacto a la lista del usuario
@@ -125,7 +125,7 @@ class ContactsRepository {
                 .select {
                     filter {
                         eq("email", email)
-                        not { eq("id", SupabaseConfig.client.plugin(Auth).currentUserOrNull()?.id) }
+                        not { eq("id", SupabaseConfig.client.auth.currentUserOrNull()?.id) }
                     }
                 }
                 .decodeList<UserSearchResponse>()

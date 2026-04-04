@@ -4,9 +4,9 @@ import android.net.Uri
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.crypto.E2ECipher
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
@@ -18,9 +18,9 @@ private const val TAG = "MessageApp.ProfileRepository"
  */
 class ProfileRepository {
 
-    private val auth = SupabaseConfig.client.plugin(Auth)
-    private val db = SupabaseConfig.client.plugin(Postgrest)
-    private val storage = SupabaseConfig.client.plugin(Storage)
+    private val auth = SupabaseConfig.client.auth
+    private val db = SupabaseConfig.client.postgrest
+    private val storage = SupabaseConfig.client.storage
 
     /**
      * Actualiza el perfil del usuario en Supabase
