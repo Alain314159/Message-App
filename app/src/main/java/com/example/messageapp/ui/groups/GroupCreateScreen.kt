@@ -1,4 +1,5 @@
 package com.example.messageapp.ui.groups
+import androidx.compose.foundation.layout.fillMaxSize
 
 import android.net.Uri
 import android.util.Log

@@ -268,11 +268,13 @@ private fun ChatInfoActions(
     repo: ChatRepository,
     onBack: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedButton(
             enabled = !loading,
             onClick = {
-                androidx.compose.runtime.LaunchedEffect(Unit) {
+                scope.launch {
                     repo.hideChatForUser(chatId, myUid)
                     onBack()
                 }
@@ -283,7 +285,7 @@ private fun ChatInfoActions(
             OutlinedButton(
                 enabled = !loading,
                 onClick = {
-                    androidx.compose.runtime.LaunchedEffect(Unit) {
+                    scope.launch {
                         repo.leaveGroup(chatId, myUid)
                         onBack()
                     }
@@ -294,7 +296,7 @@ private fun ChatInfoActions(
                 Button(
                     enabled = !loading,
                     onClick = {
-                        androidx.compose.runtime.LaunchedEffect(Unit) {
+                        scope.launch {
                             repo.deleteGroup(chatId)
                             onBack()
                         }
