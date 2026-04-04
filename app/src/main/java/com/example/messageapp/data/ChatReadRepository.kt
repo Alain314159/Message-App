@@ -4,11 +4,11 @@ import android.util.Log
 import com.example.messageapp.model.Chat
 import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.utils.retryWithBackoff
-import io.github.jan-tennert.supabase.postgrest.Postgrest
-import io.github.jan-tennert.supabase.postgrest.exception.PostgrestException
-import io.github.jan-tennert.supabase.realtime.Realtime
-import io.github.jan-tennert.supabase.realtime.exception.RealtimeException
-import io.github.jan-tennert.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.exception.PostgrestException
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.realtime.exception.RealtimeException
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -92,14 +92,19 @@ class ChatReadRepository {
                 tag = TAG
             ) {
                 db.from("chats").insert(
-            mapOf(
-                "id" to chatId,
-                "type" to "direct",
-                "member_ids" to listOf(uidA, uidB),
-                "created_at" to (System.currentTimeMillis() / 1000),
-                "updated_at" to (System.currentTimeMillis() / 1000)
-            )
-        )
+                    mapOf(
+                        "id" to chatId,
+                        "type" to "direct",
+                        "member_ids" to listOf(uidA, uidB),
+                        "created_at" to (System.currentTimeMillis() / 1000),
+                        "updated_at" to (System.currentTimeMillis() / 1000)
+                    )
+                )
+            }
+            Log.d(TAG, "ChatReadRepository: Direct chat created: $chatId")
+        } catch (e: Exception) {
+            Log.e(TAG, "ChatReadRepository: Error creating direct chat", e)
+        }
 
         chatId
     }
@@ -160,31 +165,76 @@ class ChatReadRepository {
      * Observa un chat específico en tiempo real
      */
     fun observeChat(chatId: String): Flow<Chat?> = callbackFlow {
-        try {
-            // Cargar estado inicial
-            val chat = db.from("chats")
+        // Cargar estado inicial
+        launch {
+            try {
+                val chat = loadChat(chatId)
+                trySend(chat)
+                Log.d(TAG, "ChatReadRepository: Loaded initial chat state for $chatId")
+            } catch (e: Exception) {
+                Log.e(TAG, "ChatReadRepository: Error loading initial chat state", e)
+                trySend(null)
+            }
+        }
+
+        // Suscribirse a cambios en este chat específico
+        val channel = realtime.channel("chats:public:chats")
+
+        val changeFlow = channel.postgrestChangeFlow(schema = "public") {
+            table = "chats"
+        }
+
+        // Suscribirse al canal
+        launch {
+            channel.subscribe()
+        }
+
+        // Escuchar cambios y recargar cuando haya actualizaciones
+        val job = launch {
+            changeFlow.collect { change ->
+                try {
+                    val recordJson = change.record
+                    if (recordJson != null) {
+                        val changedChat = kotlinx.serialization.json.Json.decodeFromJsonElement<Chat>(recordJson)
+                        if (changedChat.id == chatId) {
+                            Log.d(TAG, "ChatReadRepository: Chat $chatId updated, emitting new state")
+                            trySend(changedChat)
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "ChatReadRepository: Error processing chat change", e)
+                    // Recargar completo en caso de error
+                    trySend(loadChat(chatId))
+                }
+            }
+        }
+
+        awaitClose {
+            job.cancel()
+            realtime.removeChannel(channel)
+        }
+    }
+
+    /**
+     * Carga un chat específico
+     */
+    private suspend fun loadChat(chatId: String): Chat? {
+        return try {
+            db.from("chats")
                 .select(columns = Columns.list("*")) {
                     filter { eq("id", chatId) }
                 }
                 .decodeSingleOrNull<Chat>()
-
-            Log.d(TAG, "ChatReadRepository: Loaded initial chat state for $chatId")
-            trySend(chat)
         } catch (e: PostgrestException) {
-            Log.e(TAG, "ChatReadRepository: Postgrest error loading chat $chatId", e)
-            trySend(null)
+            Log.w(TAG, "ChatReadRepository: Postgrest error loading chat $chatId", e)
+            null
         } catch (e: RealtimeException) {
-            Log.e(TAG, "ChatReadRepository: Realtime error loading chat $chatId", e)
-            trySend(null)
-        } catch (e: kotlinx.serialization.SerializationException) {
-            Log.e(TAG, "ChatReadRepository: Serialization error loading chat $chatId", e)
-            trySend(null)
+            Log.w(TAG, "ChatReadRepository: Realtime error loading chat $chatId", e)
+            null
         } catch (e: Exception) {
             Log.e(TAG, "ChatReadRepository: Unexpected error loading chat $chatId", e)
-            trySend(null)
+            null
         }
-
-        awaitClose { }
     }
 
     /**

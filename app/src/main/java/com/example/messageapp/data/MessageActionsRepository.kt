@@ -3,9 +3,9 @@ package com.example.messageapp.data
 import android.util.Log
 import com.example.messageapp.model.Message
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan-tennert.supabase.postgrest.Postgrest
-import io.github.jan-tennert.supabase.postgrest.exception.PostgrestException
-import io.github.jan-tennert.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.exception.PostgrestException
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

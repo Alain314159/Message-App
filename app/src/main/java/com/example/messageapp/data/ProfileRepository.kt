@@ -4,11 +4,11 @@ import android.net.Uri
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.crypto.E2ECipher
-import io.github.jan-tennert.supabase.auth.Auth
-import io.github.jan-tennert.supabase.exception.SupabaseException
-import io.github.jan-tennert.supabase.postgrest.Postgrest
-import io.github.jan-tennert.supabase.postgrest.exception.PostgrestException
-import io.github.jan-tennert.supabase.storage.Storage
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.exception.SupabaseException
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.exception.PostgrestException
+import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException

@@ -4,10 +4,10 @@ import android.util.Log
 import android.util.Patterns
 import com.example.messageapp.model.User
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan-tennert.supabase.auth.Auth
-import io.github.jan-tennert.supabase.postgrest.Postgrest
-import io.github.jan-tennert.supabase.postgrest.exception.PostgrestException
-import io.github.jan-tennert.supabase.postgrest.query.Columns
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.exception.PostgrestException
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

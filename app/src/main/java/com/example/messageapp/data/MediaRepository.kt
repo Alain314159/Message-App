@@ -3,8 +3,8 @@ package com.example.messageapp.data
 import android.net.Uri
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan-tennert.supabase.exception.SupabaseException
-import io.github.jan-tennert.supabase.storage.Storage
+import io.github.jan.supabase.exception.SupabaseException
+import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException

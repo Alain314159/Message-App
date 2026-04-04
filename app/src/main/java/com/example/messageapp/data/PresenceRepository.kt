@@ -3,10 +3,10 @@ package com.example.messageapp.data
 import android.util.Log
 import com.example.messageapp.model.Chat
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan-tennert.supabase.exception.SupabaseException
-import io.github.jan-tennert.supabase.postgrest.Postgrest
-import io.github.jan-tennert.supabase.postgrest.query.Columns
-import io.github.jan-tennert.supabase.realtime.Realtime
+import io.github.jan.supabase.exception.SupabaseException
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.realtime.Realtime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow

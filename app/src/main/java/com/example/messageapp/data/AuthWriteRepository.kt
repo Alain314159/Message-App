@@ -9,13 +9,14 @@ import androidx.credentials.exceptions.GetCredentialException
 import com.example.messageapp.crypto.E2ECipher
 import com.example.messageapp.supabase.SupabaseConfig
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import io.github.jan-tennert.supabase.auth.Auth
-import io.github.jan-tennert.supabase.auth.providers.Email
-import io.github.jan-tennert.supabase.auth.providers.IDToken
-import io.github.jan-tennert.supabase.auth.providers.Google
-import io.github.jan-tennert.supabase.auth.exception.AuthErrorCode
-import io.github.jan-tennert.supabase.auth.exception.AuthRestException
-import io.github.jan-tennert.supabase.auth.exception.AuthWeakPasswordException
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.providers.Email
+import io.github.jan.supabase.auth.providers.IDToken
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.exception.AuthErrorCode
+import io.github.jan.supabase.auth.exception.AuthRestException
+import io.github.jan.supabase.auth.exception.AuthWeakPasswordException
+import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -41,6 +42,7 @@ class AuthWriteRepository(
 ) {
 
     private val auth = SupabaseConfig.client.plugin(Auth)
+    private val db = SupabaseConfig.client.plugin(Postgrest)
 
     /**
      * Registro con email y password

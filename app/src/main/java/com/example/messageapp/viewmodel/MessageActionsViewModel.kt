@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.messageapp.crypto.MessageDecryptor
 import com.example.messageapp.data.ChatRepository
 import com.example.messageapp.model.Message
-import io.github.jan-tennert.supabase.exception.SupabaseException
+import io.github.jan.supabase.exception.SupabaseException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch

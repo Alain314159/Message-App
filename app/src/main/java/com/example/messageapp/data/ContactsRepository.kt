@@ -4,9 +4,9 @@ import android.content.ContentResolver
 import android.provider.ContactsContract
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
-import io.github.jan-tennert.supabase.auth.Auth
-import io.github.jan-tennert.supabase.exception.SupabaseException
-import io.github.jan-tennert.supabase.postgrest.Postgrest
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.exception.SupabaseException
+import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException

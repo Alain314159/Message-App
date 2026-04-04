@@ -4,11 +4,11 @@ import android.util.Log
 import com.example.messageapp.model.Message
 import com.example.messageapp.supabase.SupabaseConfig
 import com.example.messageapp.utils.retryWithBackoff
-import io.github.jan-tennert.supabase.postgrest.Postgrest
-import io.github.jan-tennert.supabase.postgrest.exception.PostgrestException
-import io.github.jan-tennert.supabase.realtime.Realtime
-import io.github.jan-tennert.supabase.realtime.exception.RealtimeException
-import io.github.jan-tennert.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.exception.PostgrestException
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.realtime.exception.RealtimeException
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -45,8 +45,16 @@ class MessageRepository {
      * Observa los mensajes de un chat en tiempo real
      */
     fun observeMessages(chatId: String, myUid: String): Flow<List<Message>> = callbackFlow {
-        // Cargar mensajes iniciales
-        loadMessages(chatId)
+        // Cargar mensajes iniciales en una coroutine
+        launch {
+            try {
+                val messages = loadMessages(chatId)
+                trySend(messages)
+            } catch (e: Exception) {
+                Log.e(TAG, "MessageRepository: Error loading initial messages", e)
+                trySend(emptyList())
+            }
+        }
 
         // Suscribirse a cambios en mensajes
         val channel = realtime.channel("messages:public:messages")
@@ -57,7 +65,9 @@ class MessageRepository {
         }
 
         // Suscribirse al canal
-        channel.subscribe()
+        launch {
+            channel.subscribe()
+        }
 
         // Escuchar cambios
         val job = launch {
@@ -69,7 +79,8 @@ class MessageRepository {
                         val message = kotlinx.serialization.json.Json.decodeFromJsonElement<Message>(recordJson)
                         if (message.chatId == chatId) {
                             // Recargar mensajes
-                            loadMessages(chatId)
+                            val messages = loadMessages(chatId)
+                            trySend(messages)
                             // Marcar como entregado automáticamente si no soy el remitente
                             if (message.senderId != myUid) {
                                 markDelivered(chatId, message.id, myUid)
@@ -96,9 +107,10 @@ class MessageRepository {
 
     /**
      * Carga los mensajes de un chat
+     * @return Lista de mensajes ordenados por fecha
      */
-    private suspend fun loadMessages(chatId: String) {
-        try {
+    private suspend fun loadMessages(chatId: String): List<Message> {
+        return try {
             val messages = db.from("messages")
                 .select(columns = Columns.list("*")) {
                     filter { eq("chat_id", chatId) }
@@ -106,16 +118,20 @@ class MessageRepository {
                 }
                 .decodeList<Message>()
 
-            // Filtrar mensajes eliminados para este usuario
-            // Esto se maneja en la UI
+            Log.d(TAG, "MessageRepository: Loaded ${messages.size} messages for chat $chatId")
+            messages
         } catch (e: PostgrestException) {
             Log.w(TAG, "MessageRepository: Postgrest error loading messages", e)
+            emptyList()
         } catch (e: RealtimeException) {
             Log.w(TAG, "MessageRepository: Realtime error loading messages", e)
+            emptyList()
         } catch (e: kotlinx.serialization.SerializationException) {
             Log.w(TAG, "MessageRepository: Serialization error loading messages", e)
+            emptyList()
         } catch (e: Exception) {
             Log.w(TAG, "MessageRepository: Unexpected error loading messages", e)
+            emptyList()
         }
     }
 

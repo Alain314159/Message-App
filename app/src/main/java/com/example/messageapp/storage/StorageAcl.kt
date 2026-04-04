@@ -3,7 +3,7 @@ package com.example.messageapp.storage
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
 import kotlinx.coroutines.withContext
-import io.github.jan-tennert.supabase.storage.storage
+import io.github.jan.supabase.storage.storage
 
 // Note: StorageAcl usa Supabase Storage - pendiente de implementación completa
 
