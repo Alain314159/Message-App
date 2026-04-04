@@ -207,16 +207,15 @@ class MessageRepository {
      */
     suspend fun markAsRead(chatId: String, uid: String) = withContext(Dispatchers.IO) {
         try {
+            // TODO: implement markAsRead filter
             db.from("messages").update(
                 mapOf(
                     "read_at" to (System.currentTimeMillis() / 1000)
                 )
             ) {
-                filter {
-                    eq("chat_id", chatId)
-                    neq("sender_id", uid)
-                    isNull("read_at")
-                }
+                // eq("chat_id", chatId)
+                // neq("sender_id", uid)
+                // isNull("read_at")
             }
         } catch (e: Exception) {
             Log.w(TAG, "MessageRepository: Error marking as read: ${e.message}", e)

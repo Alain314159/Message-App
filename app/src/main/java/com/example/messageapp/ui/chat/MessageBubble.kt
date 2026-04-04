@@ -1,4 +1,6 @@
 package com.example.messageapp.ui.chat
+
+import androidx.compose.foundation.layout.fillMaxWidth
 import com.example.messageapp.utils.toFormattedDate
 
 import androidx.compose.foundation.layout.Column
@@ -20,7 +22,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.fillMaxWidth
 import com.example.messageapp.model.Message
 import com.example.messageapp.utils.Crypto
 
@@ -72,7 +73,7 @@ fun MessageBubble(params: MessageBubbleParams) {
                 }
                 Spacer(Modifier.heightIn(min = 4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = com.example.messageapp.utils.Time.timeFor(m.createdAt), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = m.createdAt.toFormattedDate("HH:mm"), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(6.dp))
                     if (isMine) DeliveryTicks(m)
                 }

@@ -33,6 +33,7 @@ data class ChatListTopBarParams(
     val onLogout: () -> Unit
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListTopBar(params: ChatListTopBarParams) {
     var topMenu by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -65,6 +66,7 @@ fun ChatListTopBar(params: ChatListTopBarParams) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatListFab(onClick: () -> Unit) {
     FloatingActionButton(onClick = onClick) {

@@ -156,6 +156,7 @@ fun FindPartnerScreen(
  * TopBar de la pantalla de búsqueda
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun FindPartnerTopBar(onBack: () -> Unit) {
     TopAppBar(
         title = { Text("Buscar por Email") },

@@ -79,7 +79,7 @@ fun ChatInfoScreen(
     var type by remember { mutableStateOf("direct") }
     var members by remember { mutableStateOf(listOf<MemberUi>()) }
     var owner by remember { mutableStateOf<String?>(null) }
-    val myUid = remember { client.auth.currentUserOrNull()?.id?.value.orEmpty() }
+    val myUid = remember { client.auth.currentUserOrNull()?.id.orEmpty() }
 
     var loading by remember { mutableStateOf(false) }
 
@@ -165,6 +165,7 @@ fun ChatInfoScreen(
  * TopBar de la pantalla de información
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun ChatInfoTopBar(title: String, onBack: () -> Unit) {
     TopAppBar(
         navigationIcon = {

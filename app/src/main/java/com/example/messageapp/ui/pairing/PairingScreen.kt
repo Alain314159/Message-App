@@ -142,6 +142,7 @@ fun PairingScreen(
  * TopBar de la pantalla de emparejamiento
  */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun PairingTopBar(onBack: () -> Unit) {
     TopAppBar(
         title = { Text("Emparejar Dispositivo") },

@@ -35,7 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.Image
 import com.example.messageapp.model.AvatarType
 import com.example.messageapp.viewmodel.AvatarUiState
 import com.example.messageapp.viewmodel.AvatarViewModel

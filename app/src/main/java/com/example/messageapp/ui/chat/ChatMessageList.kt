@@ -28,6 +28,7 @@ data class MessageWithAuthor(
     val authorPhoto: String?
 )
 
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ChatMessageList(
     groups: List<Pair<String, List<MessageWithAuthor>>>,
