@@ -132,9 +132,11 @@ class MessageActionsRepository {
         try {
             val result = db.from("messages")
                 .select(columns = Columns.list("id")) {
-                    eq("chat_id", chatId)
-                    neq("sender_id", uid)
-                    isNull("read_at")
+                    filter {
+                        eq("chat_id", chatId)
+                        neq("sender_id", uid)
+                        isNull("read_at")
+                    }
                     count(io.github.jan.supabase.postgrest.query.Count.EXACT)
                 }
 

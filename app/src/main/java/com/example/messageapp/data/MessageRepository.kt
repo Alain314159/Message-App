@@ -212,9 +212,11 @@ class MessageRepository {
                     "read_at" to (System.currentTimeMillis() / 1000)
                 )
             ) {
-                eq("chat_id", chatId)
-                neq("sender_id", uid)
-                isNull("read_at")
+                filter {
+                    eq("chat_id", chatId)
+                    neq("sender_id", uid)
+                    isNull("read_at")
+                }
             }
         } catch (e: Exception) {
             Log.w(TAG, "MessageRepository: Error marking as read: ${e.message}", e)

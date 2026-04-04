@@ -55,7 +55,7 @@ fun ChatScreen(chatId: String, vm: ChatViewModel, onBack: () -> Unit = {}, onOpe
     var selected by remember { mutableStateOf<Message?>(null) }
     val listState: LazyListState = rememberLazyListState()
     val context = LocalContext.current
-    val storage = remember { StorageRepository() }
+    val storage = remember { StorageRepository(context) }
     val repo = remember { ChatRepository() }
 
     val pickers = rememberMediaPickers(chatId, myUid, storage, scope, context)

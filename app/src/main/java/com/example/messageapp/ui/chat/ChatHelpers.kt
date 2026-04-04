@@ -119,7 +119,7 @@ fun rememberUsers(msgs: List<Message>): Map<String, SenderUi> {
 @Composable
 fun rememberGroupedMessagesWithAuthors(msgs: List<Message>, queryText: String, myUid: String, users: Map<String, SenderUi>): List<Pair<String, List<MessageWithAuthor>>> {
     return remember(msgs, queryText, users) {
-        val base = msgs.filter { it.deletedFor[myUid] != true }
+        val base = msgs.filter { it.deletedFor[myUid] != "true" }
         val filtered = if (queryText.isBlank()) {
             base
         } else {
@@ -130,7 +130,7 @@ fun rememberGroupedMessagesWithAuthors(msgs: List<Message>, queryText: String, m
         }
         val map = linkedMapOf<String, MutableList<MessageWithAuthor>>()
         filtered.forEach { m ->
-            val h = com.example.messageapp.utils.toFormattedDate(m.createdAt).ifBlank { " " }
+            val h = com.example.messageapp.utils.toFormattedDate(m.createdAt.toLong()).ifBlank { " " }
             val author = users[m.senderId]
             map.getOrPut(h) { mutableListOf() }.add(MessageWithAuthor(m, author?.name, author?.photo))
         }
