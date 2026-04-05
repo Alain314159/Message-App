@@ -13,8 +13,8 @@ room = "2.6.1"
 
 # Supabase SDK - v3.2.0 latest confirmed on Maven Central
 supabase = "3.2.0"
-# Ktor - v3.2.0 required by Supabase 3.2.0
-ktor = "3.2.0"
+# Ktor - v3.2.1 fixes "Space characters in SimpleName" dexing error (KTOR-8583)
+ktor = "3.2.1"
 # KSP - compatible with Kotlin 2.2.0
 ksp = "2.2.0-2.0.2"
 

@@ -1,0 +1,42 @@
+name: 'Setup Gradle + Supabase'
+description: 'Configures Gradle with Supabase credentials and caches dependencies'
+
+inputs:
+  supabase-url:
+    description: 'Supabase project URL'
+    required: true
+  supabase-anon-key:
+    description: 'Supabase anonymous key'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🔐 Configure Supabase
+      shell: bash
+      run: |
+        cat > gradle.properties << EOF
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+kotlin.code.style=official
+android.nonTransitiveRClass=true
+android.suppressUnsupportedCompileSdk=36
+SUPABASE_URL=${{ inputs.supabase-url }}
+SUPABASE_ANON_KEY=${{ inputs.supabase-anon-key }}
+EOF
+
+    - name: ☕ Setup Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: 💾 Cache Gradle
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
