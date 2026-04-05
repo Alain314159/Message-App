@@ -2,23 +2,20 @@ package com.example.messageapp.data
 
 import android.content.Context
 import com.example.messageapp.model.User
+import com.example.messageapp.supabase.SupabaseConfig
 import kotlinx.coroutines.flow.Flow
 
 /**
  * FACADE TEMPORAL - Para compatibilidad con código existente
  *
- * Este facade combina los 3 nuevos repositorios para mantener
+ * Este facade combina los repositorios para mantener
  * la API antigua de AuthRepository mientras se actualiza el código.
  *
  * TODO: Eliminar este archivo cuando todo el código use los nuevos repositorios
- *
- * @property authReadRepository Repositorio de lectura de auth
- * @property authWriteRepository Repositorio de escritura de auth
- * @property authProfileRepository Repositorio de perfil
  */
 @Deprecated(
-    "Usar AuthReadRepository, AuthWriteRepository y AuthProfileRepository por separado",
-    ReplaceWith("AuthReadRepository, AuthWriteRepository, AuthProfileRepository")
+    "Usar AuthReadRepository, AuthWriteRepository, AuthProfileRepository y UserPresenceRepository por separado",
+    ReplaceWith("AuthReadRepository, AuthWriteRepository, AuthProfileRepository, UserPresenceRepository")
 )
 class AuthRepository(
     private val authReadRepository: AuthReadRepository = AuthReadRepository(),
@@ -62,8 +59,13 @@ class AuthRepository(
     suspend fun upsertUserProfile(uid: String) =
         authProfileRepository.upsertUserProfile(uid)
 
-    suspend fun updatePresence(online: Boolean) =
-        authProfileRepository.updatePresence(online)
+    /**
+     * Actualiza presencia online (delegado a UserPresenceRepository)
+     */
+    suspend fun updatePresence(online: Boolean) {
+        val presenceRepo = UserPresenceRepository(SupabaseConfig.client)
+        presenceRepo.updateOnlineStatus(online)
+    }
 
     suspend fun updateFCMToken(token: String) =
         authProfileRepository.updateFCMToken(token)

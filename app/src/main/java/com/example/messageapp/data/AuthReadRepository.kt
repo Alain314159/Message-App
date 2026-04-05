@@ -4,7 +4,9 @@ import android.util.Log
 import android.util.Patterns
 import com.example.messageapp.model.User
 import com.example.messageapp.supabase.SupabaseConfig
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.filter.*
@@ -19,17 +21,19 @@ private const val TAG = "MessageApp"
  *
  * Responsabilidad única: CONSULTAR estado de autenticación
  *
- * Funciones (5):
+ * Funciones:
  * 1. isUserLoggedIn
  * 2. getCurrentUserId
  * 3. getCurrentUserEmail
  * 4. getCurrentUser
- * 5. isValidEmail (privada)
+ * 5. isValidEmail
  */
-class AuthReadRepository {
+class AuthReadRepository(
+    private val client: SupabaseClient = SupabaseConfig.client
+) {
 
-    private val auth = SupabaseConfig.client.auth
-    private val db = SupabaseConfig.client.postgrest
+    private val auth = client.auth
+    private val db: Postgrest = client.postgrest
 
     /**
      * Verifica si hay un usuario logueado
@@ -62,9 +66,7 @@ class AuthReadRepository {
             val response = db
                 .from("users")
                 .select(columns = Columns.list("*")) {
-                    filter {
-                        eq("id", uid)
-                    }
+                    filter { eq("id", uid) }
                 }
                 .decodeSingle<User>()
 

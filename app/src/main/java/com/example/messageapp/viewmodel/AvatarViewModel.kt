@@ -12,9 +12,9 @@ import kotlinx.coroutines.launch
 /**
  * ViewModel para la selección de avatares
  */
-class AvatarViewModel : ViewModel() {
-
-    private val avatarRepository = AvatarRepository()
+class AvatarViewModel(
+    private val avatarRepository: AvatarRepository = AvatarRepository()
+) : ViewModel() {
 
     // Estado actual de la UI
     private val _uiState = MutableStateFlow(AvatarUiState())

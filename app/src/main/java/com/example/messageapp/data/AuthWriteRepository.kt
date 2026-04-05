@@ -9,10 +9,12 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.example.messageapp.crypto.E2ECipher
 import com.example.messageapp.supabase.SupabaseConfig
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.providers.builtin.IDToken
 import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -26,38 +28,35 @@ private const val TAG = "MessageApp"
  *
  * Responsabilidad única: OPERACIONES de autenticación (login, registro, logout)
  *
- * Funciones (7):
+ * Funciones:
  * 1. signUpWithEmail
  * 2. signInWithEmail
  * 3. signInAnonymously
  * 4. signInWithGoogle
  * 5. sendPasswordReset
  * 6. signOut
- * 7. createUserProfile (privada, usada por AuthProfileRepository)
  */
 class AuthWriteRepository(
-    private val authReadRepository: AuthReadRepository = AuthReadRepository()
+    private val authReadRepository: AuthReadRepository = AuthReadRepository(),
+    private val client: SupabaseClient = SupabaseConfig.client
 ) {
 
-    private val auth = SupabaseConfig.client.auth
-    private val db = SupabaseConfig.client.postgrest
+    private val auth = client.auth
+    private val db: Postgrest = client.postgrest
 
     /**
      * Registro con email y password
      */
     suspend fun signUpWithEmail(email: String, password: String): Result<String> = withContext(Dispatchers.IO) {
         try {
-            // Validar email
             if (!authReadRepository.isValidEmail(email)) {
                 return@withContext Result.failure(IllegalArgumentException("Email inválido"))
             }
 
-            // Validar password
             if (password.length < 6) {
                 return@withContext Result.failure(IllegalArgumentException("Password debe tener al menos 6 caracteres"))
             }
 
-            // Registrar con Supabase
             val authResult = auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
@@ -65,7 +64,6 @@ class AuthWriteRepository(
 
             val uid = authResult?.id?.toString() ?: return@withContext Result.failure(Exception("User ID is null"))
 
-            // Crear perfil en la tabla users
             createUserProfile(uid, email)
 
             Log.d(TAG, "AuthWriteRepository: Usuario registrado: $uid")
@@ -86,17 +84,14 @@ class AuthWriteRepository(
      */
     suspend fun signInWithEmail(email: String, password: String): Result<String> = withContext(Dispatchers.IO) {
         try {
-            // Validar email
             if (!authReadRepository.isValidEmail(email)) {
                 return@withContext Result.failure(IllegalArgumentException("Email inválido"))
             }
 
-            // Validar password
             if (password.isBlank()) {
                 return@withContext Result.failure(IllegalArgumentException("Password no puede estar vacío"))
             }
 
-            // Login con Supabase
             auth.signInWith(Email) {
                 this.email = email
                 this.password = password
@@ -119,11 +114,9 @@ class AuthWriteRepository(
      */
     suspend fun signInAnonymously(): Result<String> = withContext(Dispatchers.IO) {
         try {
-            // Generar email temporal único
             val tempEmail = "anon_${System.currentTimeMillis()}@messageapp.local"
             val tempPassword = java.util.UUID.randomUUID().toString()
 
-            // Crear usuario anónimo
             val authResult = auth.signUpWith(Email) {
                 email = tempEmail
                 password = tempPassword
@@ -131,7 +124,6 @@ class AuthWriteRepository(
 
             val uid = authResult?.id?.toString() ?: error("User ID is null after anonymous sign up")
 
-            // Crear perfil anónimo
             createUserProfile(uid, tempEmail)
 
             Log.d(TAG, "AuthWriteRepository: Usuario anónimo creado: $uid")
@@ -150,7 +142,6 @@ class AuthWriteRepository(
         try {
             val credentialManager = CredentialManager.create(context)
 
-            // Configurar opción de Google ID
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setServerClientId(webClientId)
                 .setFilterByAuthorizedAccounts(false)
@@ -162,18 +153,15 @@ class AuthWriteRepository(
                 .addCredentialOption(googleIdOption)
                 .build()
 
-            // Obtener credencial
             val result = credentialManager.getCredential(context, request)
             val credential = result.credential
 
-            // Verificar que es Google ID Token
             if (credential is androidx.credentials.CustomCredential &&
                 credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
 
                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                 val googleToken = googleIdTokenCredential.idToken
 
-                // Login con Supabase
                 auth.signInWith(IDToken) {
                     idToken = googleToken
                     provider = Google
@@ -221,12 +209,8 @@ class AuthWriteRepository(
      */
     suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            // Eliminar claves de cifrado E2E
             E2ECipher.deleteAllKeys()
-
-            // Cerrar sesión con Supabase
             auth.signOut()
-
             Log.d(TAG, "AuthWriteRepository: Logout exitoso")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -237,7 +221,6 @@ class AuthWriteRepository(
 
     /**
      * Crea el perfil inicial del usuario en la tabla users
-     * (paquete privado para uso interno)
      */
     internal suspend fun createUserProfile(uid: String, email: String) = withContext(Dispatchers.IO) {
         try {

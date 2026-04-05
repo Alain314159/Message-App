@@ -3,6 +3,8 @@ package com.example.messageapp.data
 import android.util.Log
 import com.example.messageapp.model.AvatarType
 import com.example.messageapp.supabase.SupabaseConfig
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.filter.*
@@ -19,9 +21,11 @@ private const val TAG = "MessageApp.AvatarRepository"
 /**
  * Repositorio para gestionar la selección y almacenamiento de avatares
  */
-class AvatarRepository {
+class AvatarRepository(
+    private val client: SupabaseClient = SupabaseConfig.client
+) {
 
-    private val db = SupabaseConfig.client.postgrest
+    private val db: Postgrest = client.postgrest
 
     /**
      * Obtiene el avatar seleccionado por el usuario

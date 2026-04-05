@@ -3,7 +3,9 @@ package com.example.messageapp.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.messageapp.data.PresenceRepository
+import com.example.messageapp.data.TypingRepository
+import com.example.messageapp.data.UserPresenceRepository
+import com.example.messageapp.supabase.SupabaseConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.withContext
@@ -22,17 +24,10 @@ private const val TAG = "MessageApp"
  * - Indicador de "escribiendo..."
  * - Estado online/offline de la pareja
  * - Última vez en línea
- *
- * Funciones (11 máx):
- * 1. observeTyping
- * 2. observeOnline
- * 3. setTyping
- * 4. setOnline
- * 5. clearTyping
- * 6. getPartnerLastSeen
  */
 class PresenceViewModel(
-    private val presenceRepo: PresenceRepository = PresenceRepository()
+    private val typingRepo: TypingRepository = TypingRepository(SupabaseConfig.client),
+    private val presenceRepo: UserPresenceRepository = UserPresenceRepository(SupabaseConfig.client)
 ) : ViewModel() {
 
     private val _isPartnerTyping = MutableStateFlow(false)
@@ -50,7 +45,7 @@ class PresenceViewModel(
     @OptIn(FlowPreview::class)
     fun observeTyping(chatId: String, myUid: String) {
         viewModelScope.launch {
-            presenceRepo.observePartnerTyping(chatId, myUid)
+            typingRepo.observePartnerTyping(chatId, myUid)
                 .debounce(300)
                 .collect { isTyping ->
                     _isPartnerTyping.value = isTyping
@@ -79,7 +74,7 @@ class PresenceViewModel(
      */
     fun setTyping(chatId: String, isTyping: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            presenceRepo.setTypingStatus(chatId, isTyping)
+            typingRepo.setTypingStatus(chatId, isTyping)
         }
     }
 
@@ -97,7 +92,7 @@ class PresenceViewModel(
      */
     fun clearTyping(chatId: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            presenceRepo.setTypingStatus(chatId, false)
+            typingRepo.setTypingStatus(chatId, false)
         }
     }
 
@@ -110,11 +105,7 @@ class PresenceViewModel(
         }
     }
 
-    /**
-     * Limpia recursos cuando se destruye el ViewModel
-     */
     override fun onCleared() {
         super.onCleared()
-        // PresenceRepository cleanup handled by Supabase lifecycle
     }
 }

@@ -3,6 +3,8 @@ package com.example.messageapp.data
 import android.util.Log
 import com.example.messageapp.model.Message
 import com.example.messageapp.supabase.SupabaseConfig
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.filter.*
@@ -15,18 +17,19 @@ private const val TAG = "MessageApp"
 /**
  * Repositorio de Acciones de Mensajes usando Supabase Postgrest
  *
- * Responsabilidad única: Operaciones de ESCRITURA sobre mensajes
+ * Responsabilidad única: Operaciones de ESCRITURA sobre mensajes y chats
  *
- * Funciones (5):
+ * Funciones:
  * 1. pinMessage
  * 2. unpinMessage
  * 3. deleteMessageForUser
  * 4. deleteMessageForAll
- * 5. countUnreadMessages
  */
-class MessageActionsRepository {
+class MessageActionsRepository(
+    private val client: SupabaseClient = SupabaseConfig.client
+) {
 
-    private val db = SupabaseConfig.client.postgrest
+    private val db: Postgrest = client.postgrest
 
     /**
      * Fija un mensaje en el chat
@@ -70,7 +73,6 @@ class MessageActionsRepository {
      */
     suspend fun deleteMessageForUser(chatId: String, messageId: String, uid: String) = withContext(Dispatchers.IO) {
         try {
-            // Obtener mensaje actual
             val message = db.from("messages")
                 .select(columns = Columns.list("deleted_for")) {
                     filter { eq("id", messageId) }
@@ -111,7 +113,6 @@ class MessageActionsRepository {
                 filter { eq("id", messageId) }
             }
 
-            // Actualizar último mensaje del chat
             db.from("chats").update(
                 mapOf(
                     "last_message_enc" to "[Mensaje eliminado]",
@@ -122,19 +123,6 @@ class MessageActionsRepository {
             }
         } catch (e: Exception) {
             Log.w(TAG, "MessageActionsRepository: Error deleting message for all: ${e.message}", e)
-        }
-    }
-
-    /**
-     * Cuenta mensajes no leídos en un chat
-     */
-    suspend fun countUnreadMessages(chatId: String, uid: String): Int = withContext(Dispatchers.IO) {
-        try {
-            // TODO: implement count query
-            return@withContext 0
-        } catch (e: Exception) {
-            Log.w(TAG, "MessageActionsRepository: Error counting unread messages: ${e.message}", e)
-            throw e
         }
     }
 }

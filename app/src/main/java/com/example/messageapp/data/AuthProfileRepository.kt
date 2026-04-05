@@ -2,7 +2,9 @@ package com.example.messageapp.data
 
 import android.util.Log
 import com.example.messageapp.supabase.SupabaseConfig
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.filter.*
@@ -15,27 +17,26 @@ private const val TAG = "MessageApp"
 /**
  * Repositorio de Perfil de Usuario
  *
- * Responsabilidad única: Gestión de PERFIL y presencia del usuario
+ * Responsabilidad única: Gestión de PERFIL del usuario
  *
- * Funciones (3):
+ * Funciones:
  * 1. upsertUserProfile
- * 2. updatePresence
- * 3. updateFCMToken
+ * 2. updateFCMToken
  */
 class AuthProfileRepository(
     private val authReadRepository: AuthReadRepository = AuthReadRepository(),
-    private val authWriteRepository: AuthWriteRepository = AuthWriteRepository(authReadRepository)
+    private val authWriteRepository: AuthWriteRepository = AuthWriteRepository(authReadRepository),
+    private val client: SupabaseClient = SupabaseConfig.client
 ) {
 
-    private val auth = SupabaseConfig.client.auth
-    private val db = SupabaseConfig.client.postgrest
+    private val auth = client.auth
+    private val db: Postgrest = client.postgrest
 
     /**
      * Actualiza o crea el perfil del usuario (idempotente)
      */
     suspend fun upsertUserProfile(uid: String) = withContext(Dispatchers.IO) {
         try {
-            // Verificar si existe
             val existing = db.from("users")
                 .select(columns = Columns.list("id")) {
                     filter { eq("id", uid) }
@@ -61,28 +62,6 @@ class AuthProfileRepository(
             }
         } catch (e: Exception) {
             Log.e(TAG, "AuthProfileRepository: Error in upsert profile: ${e.message}", e)
-        }
-    }
-
-    /**
-     * Actualiza el estado de presencia del usuario (online/offline)
-     */
-    suspend fun updatePresence(online: Boolean) = withContext(Dispatchers.IO) {
-        val uid = authReadRepository.getCurrentUserId() ?: return@withContext
-
-        try {
-            db.from("users").update(
-                mapOf(
-                    "is_online" to online,
-                    "last_seen" to (System.currentTimeMillis() / 1000),
-                    "updated_at" to (System.currentTimeMillis() / 1000)
-                )
-            ) {
-                filter { eq("id", uid) }
-            }
-            Log.d(TAG, "AuthProfileRepository: Presencia actualizada: $uid online=$online")
-        } catch (e: Exception) {
-            Log.e(TAG, "AuthProfileRepository: Error updating presence: ${e.message}", e)
         }
     }
 

@@ -3,40 +3,40 @@ package com.example.messageapp.data
 import android.util.Log
 import com.example.messageapp.model.Chat
 import com.example.messageapp.supabase.SupabaseConfig
-import com.example.messageapp.utils.retryWithBackoff
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.realtime.*
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.query.filter.*
+import io.github.jan.supabase.realtime.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 // ✅ TAG constante para logging
 private const val TAG = "MessageApp"
 
 /**
- * Repositorio de Chats usando Supabase Postgrest + Realtime
+ * Repositorio de Lectura de Chats usando Supabase Postgrest + Realtime
  *
- * Responsabilidad única: Gestión y observación de CHATS (no mensajes)
+ * Responsabilidad única: Lectura y observación de CHATS
  *
- * Funciones (5):
+ * Funciones:
  * 1. directChatIdFor
- * 2. ensureDirectChat
- * 3. observeChats
- * 4. observeChat
- * 5. loadChatsForUser (privada)
+ * 2. observeChats
+ * 3. observeChat
  */
-class ChatReadRepository {
+class ChatReadRepository(
+    private val client: SupabaseClient = SupabaseConfig.client
+) {
 
-    private val db = SupabaseConfig.client.postgrest
-    private val realtime = SupabaseConfig.client.realtime
+    private val db: Postgrest = client.postgrest
+    private val realtime = client.realtime
 
     /**
      * Genera un ID único para chat directo entre 2 usuarios
@@ -47,78 +47,14 @@ class ChatReadRepository {
     }
 
     /**
-     * Crea o verifica que existe un chat directo
-     * Usa retry logic para evitar fallos en conexiones inestables
-     */
-    suspend fun ensureDirectChat(uidA: String, uidB: String): String = withContext(Dispatchers.IO) {
-        val chatId = directChatIdFor(uidA, uidB)
-
-        try {
-            // Verificar si ya existe con retry
-            val existing = retryWithBackoff(
-                maxRetries = 3,
-                initialDelay = 500,
-                tag = TAG
-            ) {
-                db.from("chats")
-                    .select(columns = Columns.list("id")) {
-                        filter { eq("id", chatId) }
-                    }
-                    .decodeSingle<Chat>()
-            }
-
-            if (existing != null) {
-                // Actualizar timestamp
-                db.from("chats").update(
-                    mapOf(
-                        "updated_at" to (System.currentTimeMillis() / 1000)
-                    )
-                ) {
-                    filter { eq("id", chatId) }
-                }
-                return@withContext chatId
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "ChatReadRepository: Error verifying chat: ${e.message}", e)
-        }
-
-        // Crear nuevo chat con retry
-        try {
-            retryWithBackoff(
-                maxRetries = 3,
-                initialDelay = 500,
-                tag = TAG
-            ) {
-                db.from("chats").insert(
-                    mapOf(
-                        "id" to chatId,
-                        "type" to "direct",
-                        "member_ids" to listOf(uidA, uidB),
-                        "created_at" to (System.currentTimeMillis() / 1000),
-                        "updated_at" to (System.currentTimeMillis() / 1000)
-                    )
-                )
-            }
-            Log.d(TAG, "ChatReadRepository: Direct chat created: $chatId")
-        } catch (e: Exception) {
-            Log.e(TAG, "ChatReadRepository: Error creating direct chat", e)
-        }
-
-        chatId
-    }
-
-    /**
      * Observa la lista de chats del usuario en tiempo real
      */
     fun observeChats(uid: String): Flow<List<Chat>> = callbackFlow {
         val channel = realtime.channel("chats:public:chats")
-
-        // Flujo de cambios de PostgREST
         val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "chats"
         }
 
-        // Suscribirse al canal
         channel.subscribe()
 
         Log.d(TAG, "ChatReadRepository: Subscribed to chats channel for user $uid")
@@ -170,17 +106,12 @@ class ChatReadRepository {
 
         // Suscribirse a cambios en este chat específico
         val channel = realtime.channel("chats:public:chats")
-
         val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "chats"
         }
 
-        // Suscribirse al canal
-        launch {
-            channel.subscribe()
-        }
+        launch { channel.subscribe() }
 
-        // Escuchar cambios y recargar cuando haya actualizaciones
         val job = launch {
             changeFlow.collect { action ->
                 val recordJson = when (action) {
@@ -232,7 +163,7 @@ class ChatReadRepository {
                     filter {
                         contains("member_ids", listOf(uid))
                     }
-                    order("updated_at", Order.DESCENDING) // DESC
+                    order("updated_at", Order.DESCENDING)
                 }
                 .decodeList<Chat>()
 
