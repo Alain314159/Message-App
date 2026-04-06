@@ -14,17 +14,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { theme } from '@/config/theme';
 import { haptics } from '@/services/haptics';
 
-// Avatares predefinidos del sistema (placeholders SVG inline)
+// Avatares predefinidos del sistema
 const SYSTEM_AVATARS = [
   {
     id: 0,
-    color: '#FF69B4',
-    initial: '💕',
+    image: require('@/assets/images/cerdita-avatar.jpg'),
+    name: 'Cerdita',
   },
   {
     id: 1,
-    color: '#8E8E93',
-    initial: '🐨',
+    image: require('@/assets/images/koala-avatar.jpg'),
+    name: 'Koala',
   },
 ];
 
@@ -32,8 +32,7 @@ export interface AvatarOption {
   type: 'system' | 'custom';
   uri?: string;
   systemId?: number;
-  color?: string;
-  initial?: string;
+  imageName?: string;
 }
 
 interface AvatarSelectorProps {
@@ -57,8 +56,7 @@ export function AvatarSelector({
       const selectedAvatar: AvatarOption = {
         type: 'system',
         systemId: avatar.id,
-        color: avatar.color,
-        initial: avatar.initial,
+        imageName: avatar.name,
       };
       await onAvatarSelect(selectedAvatar);
     },
@@ -145,6 +143,8 @@ export function AvatarSelector({
   const isCurrentSystem = (id: number) =>
     currentAvatar?.type === 'system' && currentAvatar.systemId === id;
 
+  const isCurrentCustom = () => currentAvatar?.type === 'custom';
+
   return (
     <Modal
       visible={visible}
@@ -179,15 +179,12 @@ export function AvatarSelector({
                     style={[
                       styles.avatarOption,
                       isSelected && styles.avatarOptionSelected,
-                      { backgroundColor: avatar.color + '20' },
                     ]}
                     onPress={() => handleSystemAvatarSelect(avatar)}
-                    accessibilityLabel={`Avatar ${avatar.initial}`}
+                    accessibilityLabel={`Avatar ${avatar.name}`}
                     testID={`system-avatar-${avatar.id}`}
                   >
-                    <View style={[styles.systemAvatarPlaceholder, { backgroundColor: avatar.color }]}>
-                      <Text style={styles.systemAvatarInitial}>{avatar.initial}</Text>
-                    </View>
+                    <Image source={avatar.image} style={styles.avatarImage} />
                     {isSelected && (
                       <View style={styles.selectedBadge}>
                         <IconButton
@@ -198,6 +195,9 @@ export function AvatarSelector({
                         />
                       </View>
                     )}
+                    <View style={styles.avatarNameContainer}>
+                      <Text style={styles.avatarNameText}>{avatar.name}</Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -354,6 +354,21 @@ const styles = StyleSheet.create({
   badgeIcon: {
     margin: 0,
     padding: 0,
+  },
+  avatarNameContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  avatarNameText: {
+    color: theme.colors.textInverse,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   customAvatarContainer: {
     gap: theme.spacing.md,

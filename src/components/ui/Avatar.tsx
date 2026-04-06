@@ -1,7 +1,13 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Avatar as PaperAvatar } from 'react-native-paper';
 import { theme } from '@/config/theme';
+
+// Importar avatares del sistema
+const SYSTEM_AVATARS = [
+  require('@/assets/images/cerdita-avatar.jpg'),
+  require('@/assets/images/koala-avatar.jpg'),
+];
 
 export interface AvatarProps {
   uri?: string;
@@ -10,18 +16,6 @@ export interface AvatarProps {
   isOnline?: boolean;
   displayName?: string;
   showStatus?: boolean;
-}
-
-// Generar color basado en el ID del avatar del sistema
-function getAvatarColor(id: number): string {
-  const colors = [
-    theme.colors.primary,
-    theme.colors.secondary,
-    theme.colors.success,
-    theme.colors.warning,
-    theme.colors.info,
-  ];
-  return colors[id % colors.length];
 }
 
 // Obtener iniciales del displayName
@@ -52,15 +46,13 @@ export function Avatar({
     );
   }
 
-  // Si hay un avatar del sistema, mostrar placeholder con color
-  if (systemAvatarId !== undefined) {
+  // Si hay un avatar del sistema, mostrar la imagen real
+  if (systemAvatarId !== undefined && SYSTEM_AVATARS[systemAvatarId]) {
     return (
       <View style={styles.container}>
         <PaperAvatar.Image
           size={size}
-          source={{
-            uri: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' viewBox='0 0 ${size} ${size}'><rect width='${size}' height='${size}' fill='${encodeURIComponent(getAvatarColor(systemAvatarId))}'/><text x='50%' y='55%' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='${size * 0.4}' fill='white' font-weight='bold'>${displayName ? getInitials(displayName) : 'U'}</text></svg>`,
-          }}
+          source={SYSTEM_AVATARS[systemAvatarId]}
         />
         {showStatus && isOnline && (
           <View style={[styles.indicator, { width: size * 0.25, height: size * 0.25 }]} />
