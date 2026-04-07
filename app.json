@@ -18,7 +18,9 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Cerlita Chat needs access to your camera to send photos and videos to your chats.",
         "NSPhotoLibraryUsageDescription": "Cerlita Chat needs access to your photos to share them in chats.",
-        "NSMicrophoneUsageDescription": "Cerlita Chat needs access to your microphone to record audio messages."
+        "NSPhotoLibraryAddUsageDescription": "Cerlita Chat needs to save shared media to your library.",
+        "NSMicrophoneUsageDescription": "Cerlita Chat needs access to your microphone to record audio messages and make calls.",
+        "UIBackgroundModes": ["remote-notification", "voip"]
       }
     },
     "android": {
@@ -31,9 +33,15 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
+        "RECORD_AUDIO",
         "RECEIVE_BOOT_COMPLETED",
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.INTERNET",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.WAKE_LOCK"
       ],
       "googleServicesFile": "./google-services.json"
     },
@@ -47,7 +55,29 @@
       "expo-font",
       "expo-secure-store",
       "expo-camera",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cerlita Chat needs access to your photos to share them in chats.",
+          "cameraPermission": "Cerlita Chat needs access to your camera to send photos and videos."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Cerlita Chat needs access to your microphone to record audio messages and make calls."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Cerlita Chat needs access to your photo library.",
+          "savePhotosPermission": "Cerlita Chat needs to save media to your library.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true
