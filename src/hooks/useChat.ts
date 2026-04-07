@@ -19,30 +19,24 @@ export function useChat(chatId?: string) {
 
   const { user } = useAuthStore();
 
-  // Subscribe to user's chats
   useEffect(() => {
     if (user) {
       subscribeToChats(user.id);
     }
-
-    return () => {
-      unsubscribeFromChats();
-    };
+    return () => { unsubscribeFromChats(); };
   }, [user]);
 
-  // Load specific chat
   useEffect(() => {
     if (chatId) {
-      chatService.getChat(chatId).then((chat) => {
-        setActiveChat(chat);
+      chatService.getChatById(chatId).then((chat) => {
+        setActiveChat(chat as any);
       }).catch(console.error);
     }
   }, [chatId]);
 
-  // Get chat participants
   const getParticipants = useCallback(async () => {
     if (!chatId) return [];
-    return chatService.getChatParticipants(chatId);
+    return chatService.getParticipants(chatId);
   }, [chatId]);
 
   return {

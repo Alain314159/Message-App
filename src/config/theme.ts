@@ -47,7 +47,10 @@ export const theme = {
     error: '#FF3B30',
     errorLight: '#FFEBEE',
     info: '#5AC8FA',
-    
+
+    // Surfaces
+    surface: '#FFFFFF',
+
     // Borders
     border: '#E5E5EA',
     borderLight: '#F2F2F7',

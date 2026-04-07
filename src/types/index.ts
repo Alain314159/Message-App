@@ -65,3 +65,13 @@ export interface AuthState {
   loading: boolean;
   error: string | null;
 }
+
+export type {
+  MessageReaction,
+  ReactionCounts,
+  ReplyContext,
+  MessageEdit,
+  ForwardTarget,
+  MessageAction,
+  MessageWithMeta,
+} from './message.types';

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useMessageStore } from '@/store/messageStore';
 import { useAuthStore } from '@/store/authStore';
-import { messageService } from '@/services/supabase/message.service';
+import type { ReplyContext } from '@/types/message.types';
 
 export function useMessages(chatId: string) {
   const {
@@ -9,6 +9,7 @@ export function useMessages(chatId: string) {
     loading,
     error,
     typingUsers,
+    replyContext,
     loadMessages,
     sendMessage,
     markAsRead,
@@ -17,6 +18,7 @@ export function useMessages(chatId: string) {
     unsubscribeFromMessages,
     setTyping,
     setError,
+    setReplyContext,
   } = useMessageStore();
 
   const { user } = useAuthStore();
@@ -28,10 +30,7 @@ export function useMessages(chatId: string) {
       loadMessages(chatId);
       subscribeToMessages(chatId);
     }
-
-    return () => {
-      unsubscribeFromMessages(chatId);
-    };
+    return () => { unsubscribeFromMessages(chatId); };
   }, [chatId, loadMessages, subscribeToMessages, unsubscribeFromMessages]);
 
   // Mark all as read when opening chat
@@ -41,14 +40,19 @@ export function useMessages(chatId: string) {
     }
   }, [chatId, user, markAllAsRead]);
 
+  // Set current user ID for reactions
+  useEffect(() => {
+    if (user?.id) {
+      useMessageStore.getState().setCurrentUserId(user.id);
+    }
+  }, [user?.id]);
+
   // Send message
   const handleSendMessage = useCallback(async (text: string) => {
     if (!user || !chatId) return;
-
     await sendMessage(chatId, user.id, text);
   }, [user, chatId, sendMessage]);
 
-  // Check if other user is typing
   const isOtherUserTyping = useCallback(() => {
     if (!user) return false;
     return Array.from(typingUsers).some((id) => id !== user.id);
@@ -63,5 +67,7 @@ export function useMessages(chatId: string) {
     isOtherUserTyping,
     sendMessage: handleSendMessage,
     setError,
+    replyContext,
+    setReplyContext: setReplyContext as (context: ReplyContext | null) => void,
   };
 }

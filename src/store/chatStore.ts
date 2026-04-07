@@ -32,13 +32,21 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   loadChats: async (userId: string) => {
     try {
       set({ loading: true, error: null });
-
-      const chats = await chatService.getUserChats(userId);
-
-      set({
-        chats,
-        loading: false,
-      });
+      const rawChats = await chatService.getUserChats(userId);
+      // Map DB rows to Chat interface
+      const mappedChats = rawChats.map((row: any) => ({
+        id: row.id,
+        type: row.is_group ? 'group' as const : 'direct' as const,
+        name: row.name,
+        participants: row.participant_ids || [],
+        participantsInfo: {},
+        lastMessage: null,
+        lastMessageAt: row.updated_at ? new Date(row.updated_at) : null,
+        unreadCount: 0,
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.updated_at),
+      }));
+      set({ chats: mappedChats, loading: false });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to load chats';
       set({
@@ -52,14 +60,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   createChat: async (userId1: string, userId2: string) => {
     try {
       set({ loading: true, error: null });
-
-      const chat = await chatService.createChat({
-        participantIds: [userId1, userId2],
-        isGroup: false,
-      });
-
+      const chatId = await chatService.getOrCreateDirectChat(userId1, userId2);
       set({ loading: false });
-      return chat.id;
+      return chatId;
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to create chat';
       set({

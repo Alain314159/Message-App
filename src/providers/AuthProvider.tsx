@@ -41,33 +41,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Manejar cambios de estado de la app (background/foreground)
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'background' && user) {
-        await authService.updatePresence(false, user.id);
-      } else if (nextAppState === 'active' && user) {
-        await authService.updatePresence(true, user.id);
-      }
+      // Presence tracking would need Supabase presence - skip for now
+      console.log('App state changed:', nextAppState);
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    return () => {
-      subscription.remove();
-    };
+    return () => { subscription.remove(); };
   }, [user]);
 
   // Inicializar notificaciones cuando está autenticado
   useEffect(() => {
-    if (isAuthenticated && !loading) {
-      notificationService.initialize().catch((error) => {
-        console.error('Failed to initialize notifications:', error);
-      });
+    if (isAuthenticated && !loading && user?.id) {
+      const sub = notificationService.initialize(user.id);
+      return () => { notificationService.cleanup(sub); };
     }
-
-    // Cleanup al desmontarse
-    return () => {
-      notificationService.cleanup();
-    };
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated, loading, user?.id]);
 
   // Proteger rutas
   useEffect(() => {
