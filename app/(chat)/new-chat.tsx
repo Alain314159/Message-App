@@ -5,6 +5,8 @@ import { Avatar, Searchbar, ActivityIndicator } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '@/config/theme';
 import { supabase } from '@/services/supabase/config';
+import { useAuthStore } from '@/store/authStore';
+import { chatService } from '@/services/supabase/chat.service';
 import type { User } from '@/types';
 
 export default function NewChatScreen() {
@@ -12,6 +14,7 @@ export default function NewChatScreen() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
+  const { user } = useAuthStore();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -42,9 +45,13 @@ export default function NewChatScreen() {
   };
 
   const handleSelectUser = async (selectedUser: User) => {
-    // TODO: Check if chat already exists, create if not
-    // For now, just go back
-    router.back();
+    if (!user?.id) return;
+    try {
+      const chatId = await chatService.getOrCreateDirectChat(user.id, selectedUser.id);
+      router.replace(`/(chat)/${chatId}` as any);
+    } catch (error) {
+      console.error('Failed to create chat:', error);
+    }
   };
 
   const renderItem = ({ item }: { item: User }) => (

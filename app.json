@@ -21,7 +21,8 @@
         "NSPhotoLibraryAddUsageDescription": "Cerlita Chat needs to save shared media to your library.",
         "NSMicrophoneUsageDescription": "Cerlita Chat needs access to your microphone to record audio messages and make calls.",
         "UIBackgroundModes": ["remote-notification", "voip"]
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {

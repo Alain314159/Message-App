@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { IconButton } from 'react-native-paper';
 import { theme } from '@/config/theme';
@@ -20,55 +20,98 @@ interface MessageBubbleProps {
   isStarred?: boolean;
 }
 
-export const MessageBubble: React.FC<MessageBubbleProps> = ({
-  message, isMyMessage, reactions, replyContext, onLongPress, onReactionPress, onReplyPress, isStarred,
-}) => {
-  const getStatusIcon = () => {
-    if (!isMyMessage) return null;
-    if (message.status === 'read') {
-      return <IconButton icon="check-all" size={14} iconColor={theme.colors.tickRead} style={styles.statusIcon} />;
+// Constants outside component — avoid recreation on every render
+const TYPE_EMOJIS: Record<string, string> = {
+  image: '\u{1F4F7}',
+  video: '\u{1F3A5}',
+  audio: '\u{1F3A4}',
+  file: '\u{1F4C4}',
+};
+
+const STATUS_CONFIG = [
+  { status: 'read', icon: 'check-all' as const, colorKey: 'tickRead' },
+  { status: 'delivered', icon: 'check-all' as const, colorKey: 'tickDelivered' },
+  { status: 'sent', icon: 'check' as const, colorKey: 'tickDelivered' },
+  { status: 'failed', icon: 'alert-circle' as const, colorKey: 'error' },
+];
+
+function StatusIcon({ status }: { status: string }) {
+  const config = STATUS_CONFIG.find((c) => c.status === status);
+  if (!config) return null;
+  return (
+    <IconButton
+      icon={config.icon}
+      size={14}
+      iconColor={theme.colors[config.colorKey as keyof typeof theme.colors]}
+      style={styles.statusIcon}
+    />
+  );
+}
+
+export const MessageBubble = React.memo(function MessageBubble({
+  message,
+  isMyMessage,
+  reactions,
+  replyContext,
+  onLongPress,
+  onReactionPress,
+  onReplyPress,
+  isStarred,
+}: MessageBubbleProps) {
+  const messageText = useMemo(() => {
+    if (message.type === 'text') {
+      return (
+        <Text style={[styles.text, isMyMessage ? styles.myText : styles.theirText]}>
+          {message.text}
+          {message.editedAt && <Text style={styles.editedLabel}> (editado)</Text>}
+        </Text>
+      );
     }
-    if (message.status === 'delivered') {
-      return <IconButton icon="check-all" size={14} iconColor={theme.colors.tickDelivered} style={styles.statusIcon} />;
-    }
-    if (message.status === 'sent') {
-      return <IconButton icon="check" size={14} iconColor={theme.colors.tickDelivered} style={styles.statusIcon} />;
-    }
-    if (message.status === 'failed') {
-      return <IconButton icon="alert-circle" size={14} iconColor={theme.colors.error} style={styles.statusIcon} />;
+    if (message.mediaURL) {
+      return (
+        <Text style={[styles.text, isMyMessage ? styles.myText : styles.theirText]}>
+          {TYPE_EMOJIS[message.type] || '\u{1F4CE}'} {message.type}
+        </Text>
+      );
     }
     return null;
-  };
+  }, [message.type, message.text, message.mediaURL, message.editedAt, isMyMessage]);
 
-  const typeIcons: Record<string, string> = { image: '\u{1F4F7}', video: '\u{1F3A5}', audio: '\u{1F3A4}', file: '\u{1F4C4}' };
+  const handleLongPress = useCallback(() => {
+    onLongPress?.();
+  }, [onLongPress]);
 
   return (
-    <View style={[styles.container, isMyMessage ? styles.myMessage : styles.theirMessage]} testID={`message-${message.id}`}>
+    <View
+      style={[styles.container, isMyMessage ? styles.myMessage : styles.theirMessage]}
+      testID={`message-${message.id}`}
+    >
       {replyContext && (
-        <TouchableOpacity style={styles.replyThread} onPress={onReplyPress} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.replyThread}
+          onPress={onReplyPress}
+          activeOpacity={0.7}
+        >
           <ReplyThread context={replyContext} isMyMessage={isMyMessage} />
         </TouchableOpacity>
       )}
       <TouchableOpacity
         style={[styles.bubble, isMyMessage ? styles.myBubble : styles.theirBubble]}
-        onLongPress={onLongPress}
+        onLongPress={handleLongPress}
         activeOpacity={0.8}
       >
-        {message.type === 'text' && (
-          <Text style={[styles.text, isMyMessage ? styles.myText : styles.theirText]}>
-            {message.text}
-            {message.editedAt && <Text style={styles.editedLabel}> (editado)</Text>}
-          </Text>
+        {messageText}
+        {reactions && (
+          <MessageReactions
+            reactions={reactions}
+            onReactionPress={onReactionPress}
+          />
         )}
-        {message.type !== 'text' && message.mediaURL && (
-          <Text style={[styles.text, isMyMessage ? styles.myText : styles.theirText]}>
-            {typeIcons[message.type] || '\u{1F4CE}'} {message.type}
-          </Text>
-        )}
-        {reactions && <MessageReactions reactions={reactions} onReactionPress={onReactionPress} />}
         <View style={styles.meta}>
-          <Text style={styles.time}>{format(new Date(message.createdAt), 'HH:mm', { locale: es })}</Text>
-          {getStatusIcon()}
+          <Text style={styles.time}>
+            {format(new Date(message.createdAt), 'HH:mm', { locale: es })}
+          </Text>
+          {isMyMessage && <StatusIcon status={message.status} />}
         </View>
       </TouchableOpacity>
       {isStarred && (
@@ -78,7 +121,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: { marginVertical: 2, maxWidth: '85%' },
